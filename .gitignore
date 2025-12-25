@@ -5,4 +5,4 @@ dist/
 .env
 coverage/
 .idea/
- examples/maplibre_offline/*.pmtiles
+examples/maplibre_offline/*.pmtiles
