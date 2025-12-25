@@ -33,6 +33,9 @@ export class IndexedDBSource {
         });
     }
     async getAndSliceBlob(start, end) {
+        const startTime = performance.now();
+        const byteRange = end - start;
+        console.debug(`[IndexedDB] Starting retrieval: range=${start}-${end} (${byteRange} bytes)`);
         const tx = this.db.transaction(this.tablename, "readonly");
         const store = tx.objectStore(this.tablename);
         return new Promise((resolve, reject) => {
@@ -40,18 +43,25 @@ export class IndexedDBSource {
             request.onsuccess = () => {
                 const res = request.result;
                 if (res?.blob) {
-                    resolve(res.blob.slice(start, end));
+                    const slicedBlob = res.blob.slice(start, end);
+                    const elapsed = performance.now() - startTime;
+                    console.debug(`[IndexedDB] Retrieved and sliced blob: range=${start}-${end} (${byteRange} bytes) in ${elapsed.toFixed(2)}ms`);
+                    resolve(slicedBlob);
                 }
                 else {
+                    const elapsed = performance.now() - startTime;
+                    console.debug(`[IndexedDB] No blob found: range=${start}-${end} in ${elapsed.toFixed(2)}ms`);
                     resolve(undefined);
                 }
             };
             request.onerror = () => {
-                console.error("Error getting blob from IndexedDB:", request.error);
+                const elapsed = performance.now() - startTime;
+                console.error(`[IndexedDB] Error getting blob from IndexedDB after ${elapsed.toFixed(2)}ms:`, request.error);
                 resolve(undefined);
             };
             tx.onerror = () => {
-                console.error("Transaction error:", tx.error);
+                const elapsed = performance.now() - startTime;
+                console.error(`[IndexedDB] Transaction error after ${elapsed.toFixed(2)}ms:`, tx.error);
                 reject(tx.error);
             };
         });

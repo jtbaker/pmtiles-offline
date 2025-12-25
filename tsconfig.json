@@ -3,7 +3,8 @@
     "target": "es2021",
     "lib": ["es2021", "dom"],
     "strict": true,
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "paths": {},
     "types": ["node"],
     "allowSyntheticDefaultImports": true

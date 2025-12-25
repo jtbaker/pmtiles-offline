@@ -3,11 +3,11 @@
     "target": "es2021",
     "lib": ["es2021", "dom"],
     "strict": true,
-    "moduleResolution": "node",
-    "paths": {
-    },
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "paths": {},
     "types": ["node"],
     "allowSyntheticDefaultImports": true
   },
-  "include": ["*.ts","test/*.ts"]
+  "include": ["*.ts", "test/*.ts"]
 }
