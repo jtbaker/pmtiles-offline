@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PMTiles Offline Demo</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PMTiles Offline">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/pmtiles@4.3.1/dist/pmtiles.js"></script>
+<script type="importmap">
+    {
+        "imports": {
+            "pmtiles-offline": "https://unpkg.com/pmtiles-offline@1.0.0/dist/index.js"
+        }
+    }
+    </script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        #map {
+            position: absolute;
+            top: 50px;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #status {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 14px;
+            z-index: 1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #status.cached {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+
+        #status.loading {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+        }
+
+        .controls {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            z-index: 2;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .controls button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .controls button:hover {
+            background: #5568d3;
+        }
+
+        .controls button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">Initializing...</div>
+    <div class="controls">
+        <button id="clearCache" title="Clear cached map data">Clear Cache</button>
+        <button id="reload" title="Reload map">Reload Map</button>
+    </div>
+    <div id="map"></div>
+
+    <script type="module">
+        import { IndexedDBSource } from "pmtiles-offline";
+
+        const status = document.getElementById('status');
+        const clearCacheBtn = document.getElementById('clearCache');
+        const reloadBtn = document.getElementById('reload');
+
+        function setStatus(message, type = 'default') {
+            status.textContent = message;
+            status.className = type;
+        }
+
+        // Using a small PMTiles file from protomaps for the demo
+        const PMTILES_URL = "https://pmtiles.io/protomaps(vector)ODbL_firenze.pmtiles";
+        const filename = "firenze.pmtiles";
+        const dbname = "pmtiles-offline-demo";
+        const tablename = "tiles";
+
+        async function clearCache() {
+            try {
+                const db = await IndexedDBSource.openDb(dbname, tablename);
+                const transaction = db.transaction([tablename], 'readwrite');
+                const store = transaction.objectStore(tablename);
+                await new Promise((resolve, reject) => {
+                    const request = store.delete(filename);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+                db.close();
+                setStatus('Cache cleared! Click reload to download again.', 'default');
+                reloadBtn.disabled = false;
+            } catch (error) {
+                setStatus('Error clearing cache: ' + error.message, 'default');
+            }
+        }
+
+        async function loadMap() {
+            try {
+                clearCacheBtn.disabled = true;
+                reloadBtn.disabled = true;
+
+                setStatus('Opening database...', 'loading');
+                const db = await IndexedDBSource.openDb(dbname, tablename);
+
+                const offlineSource = new IndexedDBSource(db, filename, tablename);
+                const sourceExists = await offlineSource.exists();
+
+                if (!sourceExists) {
+                    setStatus('Downloading map data (this may take a moment)...', 'loading');
+                    const response = await fetch(PMTILES_URL);
+                    const buffer = await response.arrayBuffer();
+                    const blob = new Blob([buffer], { type: "application/octet-stream" });
+
+                    setStatus('Storing in IndexedDB...', 'loading');
+                    await offlineSource.setSource({ filename, blob });
+                    setStatus('Map cached! Now works offline!', 'cached');
+                } else {
+                    setStatus('Using cached map (offline mode active)', 'cached');
+                }
+
+                const protocol = new pmtiles.Protocol();
+                maplibregl.addProtocol("pmtiles", protocol.tile);
+
+                const p = new pmtiles.PMTiles(offlineSource);
+                protocol.add(p);
+
+                // Create map
+                const map = new maplibregl.Map({
+                    container: 'map',
+                    center: [11.2558, 43.7696], // Florence, Italy
+                    zoom: 12,
+                    style: {
+                        version: 8,
+                        sources: {
+                            protomaps: {
+                                type: "vector",
+                                url: `pmtiles://${filename}`,
+                                attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>'
+                            }
+                        },
+                        layers: [
+                            {
+                                id: 'background',
+                                type: 'background',
+                                paint: { 'background-color': '#f8f8f8' }
+                            },
+                            {
+                                id: 'water',
+                                source: 'protomaps',
+                                'source-layer': 'water',
+                                type: 'fill',
+                                paint: { 'fill-color': '#80b1d3' }
+                            },
+                            {
+                                id: 'buildings',
+                                source: 'protomaps',
+                                'source-layer': 'buildings',
+                                type: 'fill',
+                                paint: { 'fill-color': '#d9d9d9' }
+                            },
+                            {
+                                id: 'roads',
+                                source: 'protomaps',
+                                'source-layer': 'roads',
+                                type: 'line',
+                                paint: {
+                                    'line-color': '#fc8d62',
+                                    'line-width': 1
+                                }
+                            }
+                        ]
+                    }
+                });
+
+                map.addControl(new maplibregl.NavigationControl());
+
+                clearCacheBtn.disabled = false;
+                reloadBtn.disabled = false;
+
+            } catch (error) {
+                setStatus('Error: ' + error.message, 'default');
+                console.error('Error loading map:', error);
+                clearCacheBtn.disabled = false;
+                reloadBtn.disabled = false;
+            }
+        }
+
+        clearCacheBtn.addEventListener('click', clearCache);
+        reloadBtn.addEventListener('click', () => {
+            location.reload();
+        });
+
+        // Start loading
+        loadMap();
+    </script>
+
+    <script>
+        // Register service worker for offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PWA Icon Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #667eea;
+        }
+        .instructions {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PMTiles Offline - PWA Icon Generator</h1>
+
+    <div class="instructions">
+        <p><strong>Instructions:</strong></p>
+        <ol>
+            <li>Click the buttons below to generate and download the PWA icons</li>
+            <li>Save the downloaded files as <code>icon-192.png</code> and <code>icon-512.png</code></li>
+            <li>Place them in the <code>/docs</code> folder of your repository</li>
+        </ol>
+    </div>
+
+    <div>
+        <button onclick="generateIcon(192)">Generate 192x192 Icon</button>
+        <button onclick="generateIcon(512)">Generate 512x512 Icon</button>
+    </div>
+
+    <div id="preview"></div>
+
+    <script>
+        function generateIcon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Create gradient background
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+
+            // Draw map pin icon
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const pinSize = size * 0.5;
+
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = size * 0.02;
+
+            // Draw pin shape
+            ctx.beginPath();
+            const pinWidth = pinSize * 0.6;
+            const pinHeight = pinSize * 0.8;
+            const pinTop = centerY - pinHeight * 0.3;
+
+            // Pin head (circle)
+            ctx.arc(centerX, pinTop + pinWidth/2, pinWidth/2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pin point (triangle)
+            ctx.beginPath();
+            ctx.moveTo(centerX, pinTop + pinWidth);
+            ctx.lineTo(centerX - pinWidth * 0.3, pinTop + pinWidth * 0.6);
+            ctx.lineTo(centerX + pinWidth * 0.3, pinTop + pinWidth * 0.6);
+            ctx.closePath();
+            ctx.fill();
+
+            // Inner circle (hole in pin)
+            ctx.fillStyle = '#667eea';
+            ctx.beginPath();
+            ctx.arc(centerX, pinTop + pinWidth/2, pinWidth/4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Show preview
+            const preview = document.getElementById('preview');
+            preview.innerHTML = '';
+            const previewCanvas = canvas.cloneNode();
+            const previewCtx = previewCanvas.getContext('2d');
+            previewCtx.drawImage(canvas, 0, 0);
+            previewCanvas.style.width = '192px';
+            previewCanvas.style.height = '192px';
+            preview.appendChild(previewCanvas);
+
+            const caption = document.createElement('p');
+            caption.textContent = `Preview of ${size}x${size} icon (scaled to 192x192 for display)`;
+            preview.appendChild(caption);
+        }
+    </script>
+</body>
+</html>
