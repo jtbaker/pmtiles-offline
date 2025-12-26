@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>PMTiles Offline Demo</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="PMTiles Offline">
@@ -17,7 +17,7 @@
     <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/pmtiles@4.3.1/dist/pmtiles.js"></script>
-<script type="importmap">
+    <script type="importmap">
     {
         "imports": {
             "pmtiles-offline": "https://unpkg.com/pmtiles-offline@1.0.0/dist/index.js"
@@ -25,48 +25,269 @@
     }
     </script>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            box-sizing: border-box;
         }
 
-        #map {
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+
+        /* Header */
+        #header {
             position: absolute;
-            top: 50px;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 48px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            z-index: 1000;
+        }
+
+        #logo {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-right: 24px;
+        }
+
+        #tabs {
+            display: flex;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .tab:hover {
+            background: #f5f5f5;
+        }
+
+        .tab.active {
+            background: #e8f0fe;
+            color: #1967d2;
+        }
+
+        #header-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: 1px solid #e0e0e0;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: #f5f5f5;
+            border-color: #ccc;
+        }
+
+        .btn-icon.active {
+            background: #e8f0fe;
+            border-color: #1967d2;
+        }
+
+        /* Map Container */
+        #map-view {
+            position: absolute;
+            top: 48px;
             left: 0;
             right: 0;
             bottom: 33.33%;
         }
 
-        #log-container {
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Upload Overlay */
+        #upload-overlay {
+            position: absolute;
+            top: 48px;
+            left: 0;
+            right: 0;
+            bottom: 33.33%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        #upload-overlay.hidden {
+            display: none;
+        }
+
+        #upload-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 32px;
+            max-width: 480px;
+            text-align: center;
+        }
+
+        #upload-card h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        #upload-card p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        #drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 48px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+        }
+
+        #drop-zone:hover {
+            border-color: #1967d2;
+            background: #f8f9fa;
+        }
+
+        #drop-zone.dragover {
+            border-color: #1967d2;
+            background: #e8f0fe;
+            border-style: solid;
+        }
+
+        #drop-zone-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #drop-icon {
+            font-size: 48px;
+            color: #999;
+        }
+
+        #drop-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        #drop-subtext {
+            font-size: 12px;
+            color: #999;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 16px 0;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .divider span {
+            padding: 0 12px;
+        }
+
+        #load-default-btn {
+            width: 100%;
+            padding: 12px 24px;
+            background: #1967d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #load-default-btn:hover {
+            background: #1557b0;
+        }
+
+        #load-default-btn:disabled {
+            background: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        /* Log Panel */
+        #log-panel {
             position: absolute;
             left: 0;
             right: 0;
             bottom: 0;
             height: 33.33%;
             background: #1e1e1e;
-            border-top: 2px solid #667eea;
+            border-top: 1px solid #2d2d2d;
             display: flex;
             flex-direction: column;
         }
 
         #log-header {
-            background: #2d2d2d;
+            background: #252525;
             color: #e0e0e0;
-            padding: 8px 12px;
+            padding: 8px 16px;
             font-size: 12px;
             font-weight: 600;
-            border-bottom: 1px solid #3d3d3d;
+            border-bottom: 1px solid #2d2d2d;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         #log-clear {
-            background: #667eea;
-            color: white;
-            border: none;
+            background: transparent;
+            color: #999;
+            border: 1px solid #3d3d3d;
             padding: 4px 12px;
             border-radius: 3px;
             cursor: pointer;
@@ -74,7 +295,8 @@
         }
 
         #log-clear:hover {
-            background: #5568d3;
+            background: #2d2d2d;
+            border-color: #666;
         }
 
         #log {
@@ -92,118 +314,276 @@
         }
 
         #log::-webkit-scrollbar-track {
-            background: #2d2d2d;
+            background: #1e1e1e;
         }
 
         #log::-webkit-scrollbar-thumb {
-            background: #667eea;
+            background: #444;
             border-radius: 4px;
         }
 
         #log::-webkit-scrollbar-thumb:hover {
-            background: #5568d3;
+            background: #555;
         }
 
         .log-entry {
             margin: 2px 0;
             padding: 4px 6px;
             border-radius: 3px;
-            word-wrap: break-word;
         }
 
-        .log-entry.debug {
-            color: #9cdcfe;
-        }
-
-        .log-entry.info {
-            color: #4ec9b0;
-        }
-
-        .log-entry.warn {
-            color: #dcdcaa;
-            background: rgba(220, 220, 170, 0.1);
-        }
-
-        .log-entry.error {
-            color: #f48771;
-            background: rgba(244, 135, 113, 0.1);
-        }
+        .log-entry.debug { color: #9cdcfe; }
+        .log-entry.info { color: #4ec9b0; }
+        .log-entry.warn { color: #dcdcaa; background: rgba(220, 220, 170, 0.1); }
+        .log-entry.error { color: #f48771; background: rgba(244, 135, 113, 0.1); }
+        .log-entry.highlight { background: rgba(25, 103, 210, 0.2); border-left: 3px solid #1967d2; padding-left: 8px; }
 
         .log-timestamp {
             color: #858585;
             margin-right: 8px;
         }
 
-        .log-message {
-            color: inherit;
+        /* Status indicator */
+        #status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #999;
+            margin-right: 8px;
         }
 
-        .log-entry.highlight {
-            background: rgba(102, 126, 234, 0.2);
-            border-left: 3px solid #667eea;
-            padding-left: 8px;
+        #status-indicator.loading {
+            background: #fbbc04;
+            animation: pulse 2s infinite;
         }
 
-        #status {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-size: 14px;
-            z-index: 1;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        #status-indicator.cached {
+            background: #34a853;
         }
 
-        #status.cached {
-            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
-        #status.loading {
-            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+        #status-text {
+            font-size: 12px;
+            color: #666;
         }
 
-        .maplibregl-ctrl-offline {
-            background: white;
-            padding: 10px;
-            border-radius: 4px;
-            box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
-        }
-
-        .maplibregl-ctrl-offline button {
-            display: block;
-            width: 100%;
-            margin: 5px 0;
-            padding: 8px 15px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        /* File info badge */
+        #file-info {
+            display: none;
+            padding: 4px 12px;
+            background: #e8f0fe;
+            color: #1967d2;
+            border-radius: 12px;
             font-size: 12px;
             font-weight: 500;
         }
 
-        .maplibregl-ctrl-offline button:hover {
-            background: #5568d3;
+        #file-info.active {
+            display: inline-block;
         }
 
-        .maplibregl-ctrl-offline button:disabled {
-            background: #cbd5e0;
-            cursor: not-allowed;
+        /* Cached Files List */
+        #cached-files-section {
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        #cached-files-section.active {
+            display: block;
+        }
+
+        #cached-files-section h3 {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .cached-file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+
+        .cached-file-item:hover {
+            background: #e8f0fe;
+        }
+
+        .cached-file-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .cached-file-name {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .cached-file-size {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .cached-file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-load, .btn-delete {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-load {
+            background: #1967d2;
+            color: white;
+        }
+
+        .btn-load:hover {
+            background: #1557b0;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+
+        #no-cached-files {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            padding: 20px;
+            display: none;
+        }
+
+        /* Tooltip */
+        #tooltip {
+            position: absolute;
+            display: none;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 0;
+            border-radius: 3px;
+            font-size: 11px;
+            font-family: monospace;
+            pointer-events: none;
+            z-index: 10000;
+            max-width: 400px;
+            line-height: 1.4;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        #tooltip.visible {
+            display: block;
+        }
+
+        #tooltip table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        #tooltip td {
+            padding: 4px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #tooltip tr:last-child td {
+            border-bottom: none;
+        }
+
+        #tooltip td:first-child {
+            color: #aaa;
+            font-weight: 500;
+            white-space: nowrap;
+            padding-right: 12px;
+        }
+
+        #tooltip td:last-child {
+            color: #fff;
+            word-break: break-word;
         }
     </style>
 </head>
 <body>
-    <div id="status">Initializing...</div>
-    <div id="map"></div>
-    <div id="log-container">
+    <!-- Header -->
+    <div id="header">
+        <div id="logo">PMTiles Offline</div>
+        <div id="tabs">
+            <button class="tab active" data-tab="map">Map</button>
+            <button class="tab" data-tab="log">Console</button>
+        </div>
+        <div id="header-controls">
+            <div style="display: flex; align-items: center; margin-right: 8px;">
+                <div id="status-indicator"></div>
+                <span id="status-text">Ready</span>
+            </div>
+            <span id="file-info"></span>
+            <button class="btn-icon" id="btn-tooltip" title="Toggle Tooltip">ℹ️</button>
+            <button class="btn-icon" id="btn-upload" title="Load PMTiles">📁</button>
+            <button class="btn-icon" id="btn-clear" title="Clear Cache">🗑️</button>
+        </div>
+    </div>
+
+    <!-- Upload Overlay -->
+    <div id="upload-overlay">
+        <div id="upload-card">
+            <h2>Load PMTiles Data</h2>
+            <p>Drag and drop a .pmtiles file or load the default dataset</p>
+
+            <!-- Cached Files Section -->
+            <div id="cached-files-section">
+                <h3>Cached Files</h3>
+                <div id="cached-files-list"></div>
+            </div>
+
+            <div id="drop-zone">
+                <div id="drop-zone-content">
+                    <div id="drop-icon">📦</div>
+                    <div id="drop-text">Drop .pmtiles file here</div>
+                    <div id="drop-subtext">or click to browse</div>
+                </div>
+            </div>
+            <input type="file" id="file-input" accept=".pmtiles">
+
+            <div class="divider"><span>OR</span></div>
+
+            <button id="load-default-btn">Load Florence, Italy (Default)</button>
+        </div>
+    </div>
+
+    <!-- Map View -->
+    <div id="map-view">
+        <div id="map"></div>
+        <div id="tooltip"></div>
+    </div>
+
+    <!-- Log Panel -->
+    <div id="log-panel">
         <div id="log-header">
-            <span>Technical Log</span>
-            <button id="log-clear">Clear Log</button>
+            <span>Console</span>
+            <button id="log-clear">Clear</button>
         </div>
         <div id="log"></div>
     </div>
@@ -211,16 +591,39 @@
     <script type="module">
         import { IndexedDBSource } from "pmtiles-offline";
 
-        const status = document.getElementById('status');
+        // DOM elements
+        const uploadOverlay = document.getElementById('upload-overlay');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const loadDefaultBtn = document.getElementById('load-default-btn');
         const logElement = document.getElementById('log');
         const logClearBtn = document.getElementById('log-clear');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const fileInfo = document.getElementById('file-info');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnClear = document.getElementById('btn-clear');
+        const tabs = document.querySelectorAll('.tab');
+        const mapView = document.getElementById('map-view');
+        const logPanel = document.getElementById('log-panel');
+        const cachedFilesSection = document.getElementById('cached-files-section');
+        const cachedFilesList = document.getElementById('cached-files-list');
+        const tooltip = document.getElementById('tooltip');
+        const btnTooltip = document.getElementById('btn-tooltip');
 
-        function setStatus(message, type = 'default') {
-            status.textContent = message;
-            status.className = type;
-        }
+        // Configuration
+        const DEFAULT_URL = "https://pmtiles.io/protomaps(vector)ODbL_firenze.pmtiles";
+        const DEFAULT_FILENAME = "firenze.pmtiles";
+        const DEFAULT_CENTER = [11.2558, 43.7696];
+        const DEFAULT_ZOOM = 12;
+        const DB_NAME = "pmtiles-offline-demo";
+        const TABLE_NAME = "tiles";
 
-        // Logging system
+        let currentMap = null;
+        let tooltipEnabled = false;
+        let lastMouseEvent = null;
+
+        // Logger
         const logger = {
             log(message, level = 'info', highlight = false) {
                 const entry = document.createElement('div');
@@ -237,335 +640,710 @@
 
                 entry.innerHTML = `<span class="log-timestamp">[${timestamp}]</span><span class="log-message">${message}</span>`;
                 logElement.appendChild(entry);
-
-                // Auto-scroll to bottom
                 logElement.scrollTop = logElement.scrollHeight;
             },
-
-            debug(message, highlight = false) {
-                this.log(message, 'debug', highlight);
-            },
-
-            info(message, highlight = false) {
-                this.log(message, 'info', highlight);
-            },
-
-            warn(message, highlight = false) {
-                this.log(message, 'warn', highlight);
-            },
-
-            error(message, highlight = false) {
-                this.log(message, 'error', highlight);
-            },
-
-            clear() {
-                logElement.innerHTML = '';
-            }
+            debug(msg, hl = false) { this.log(msg, 'debug', hl); },
+            info(msg, hl = false) { this.log(msg, 'info', hl); },
+            warn(msg, hl = false) { this.log(msg, 'warn', hl); },
+            error(msg, hl = false) { this.log(msg, 'error', hl); },
+            clear() { logElement.innerHTML = ''; }
         };
 
-        // Clear log button
-        logClearBtn.addEventListener('click', () => logger.clear());
-
-        // Intercept console methods to capture IndexedDB logs
-        const originalConsoleDebug = console.debug;
-        const originalConsoleLog = console.log;
-        const originalConsoleInfo = console.info;
-        const originalConsoleWarn = console.warn;
-        const originalConsoleError = console.error;
+        // Intercept console
+        const originalConsole = {
+            debug: console.debug,
+            log: console.log,
+            info: console.info,
+            warn: console.warn,
+            error: console.error
+        };
 
         console.debug = function(...args) {
-            const message = args.join(' ');
-            // Highlight IndexedDB timing logs
-            const isIndexedDBLog = message.includes('[IndexedDB]');
-            logger.debug(message, isIndexedDBLog);
-            originalConsoleDebug.apply(console, args);
+            const msg = args.join(' ');
+            logger.debug(msg, msg.includes('[IndexedDB]'));
+            originalConsole.debug.apply(console, args);
         };
+        console.log = function(...args) { logger.info(args.join(' ')); originalConsole.log.apply(console, args); };
+        console.info = function(...args) { logger.info(args.join(' ')); originalConsole.info.apply(console, args); };
+        console.warn = function(...args) { logger.warn(args.join(' ')); originalConsole.warn.apply(console, args); };
+        console.error = function(...args) { logger.error(args.join(' ')); originalConsole.error.apply(console, args); };
 
-        console.log = function(...args) {
-            const message = args.join(' ');
-            logger.info(message);
-            originalConsoleLog.apply(console, args);
-        };
+        // Set status
+        function setStatus(text, state = 'default') {
+            statusText.textContent = text;
+            statusIndicator.className = state;
+        }
 
-        console.info = function(...args) {
-            const message = args.join(' ');
-            logger.info(message);
-            originalConsoleInfo.apply(console, args);
-        };
+        // List all cached PMTiles files
+        async function listCachedFiles() {
+            try {
+                const db = await IndexedDBSource.openDb(DB_NAME, TABLE_NAME);
+                const tx = db.transaction([TABLE_NAME], 'readonly');
+                const store = tx.objectStore(TABLE_NAME);
 
-        console.warn = function(...args) {
-            const message = args.join(' ');
-            logger.warn(message);
-            originalConsoleWarn.apply(console, args);
-        };
+                return new Promise((resolve, reject) => {
+                    const request = store.getAllKeys();
+                    request.onsuccess = async () => {
+                        const keys = request.result;
+                        const files = [];
 
-        console.error = function(...args) {
-            const message = args.join(' ');
-            logger.error(message);
-            originalConsoleError.apply(console, args);
-        };
+                        for (const key of keys) {
+                            const getRequest = store.get(key);
+                            await new Promise((res, rej) => {
+                                getRequest.onsuccess = () => {
+                                    const data = getRequest.result;
+                                    if (data && data.blob) {
+                                        files.push({
+                                            filename: data.filename || key,
+                                            size: data.blob.size
+                                        });
+                                    }
+                                    res();
+                                };
+                                getRequest.onerror = () => rej(getRequest.error);
+                            });
+                        }
 
-        // Initial log entry
-        logger.info('PMTiles Offline Demo initialized', true);
-
-        // Using a small PMTiles file from protomaps for the demo
-        const PMTILES_URL = "https://pmtiles.io/protomaps(vector)ODbL_firenze.pmtiles";
-        const filename = "firenze.pmtiles";
-        const dbname = "pmtiles-offline-demo";
-        const tablename = "tiles";
-
-        /**
-         * OfflineControl - A MapLibre control for managing offline cache
-         * Implements the IControl interface
-         */
-        class OfflineControl {
-            constructor() {
-                this._container = null;
-                this._clearCacheBtn = null;
-                this._reloadBtn = null;
-            }
-
-            onAdd(map) {
-                this._map = map;
-                this._container = document.createElement('div');
-                this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group maplibregl-ctrl-offline';
-
-                // Create Clear Cache button
-                this._clearCacheBtn = document.createElement('button');
-                this._clearCacheBtn.textContent = 'Clear Cache';
-                this._clearCacheBtn.title = 'Clear cached map data';
-                this._clearCacheBtn.addEventListener('click', () => this._handleClearCache());
-
-                // Create Reload button
-                this._reloadBtn = document.createElement('button');
-                this._reloadBtn.textContent = 'Reload Map';
-                this._reloadBtn.title = 'Reload map';
-                this._reloadBtn.addEventListener('click', () => this._handleReload());
-
-                this._container.appendChild(this._clearCacheBtn);
-                this._container.appendChild(this._reloadBtn);
-
-                return this._container;
-            }
-
-            onRemove() {
-                if (this._container && this._container.parentNode) {
-                    this._container.parentNode.removeChild(this._container);
-                }
-                this._map = null;
-            }
-
-            getDefaultPosition() {
-                return 'top-right';
-            }
-
-            // Public methods for controlling button states
-            disableButtons() {
-                if (this._clearCacheBtn) this._clearCacheBtn.disabled = true;
-                if (this._reloadBtn) this._reloadBtn.disabled = true;
-            }
-
-            enableButtons() {
-                if (this._clearCacheBtn) this._clearCacheBtn.disabled = false;
-                if (this._reloadBtn) this._reloadBtn.disabled = false;
-            }
-
-            async _handleClearCache() {
-                try {
-                    logger.warn('Clearing PMTiles cache...', true);
-                    const db = await IndexedDBSource.openDb(dbname, tablename);
-                    const transaction = db.transaction([tablename], 'readwrite');
-                    const store = transaction.objectStore(tablename);
-                    await new Promise((resolve, reject) => {
-                        const request = store.delete(filename);
-                        request.onsuccess = () => resolve();
-                        request.onerror = () => reject(request.error);
-                    });
-                    db.close();
-                    logger.info('Cache cleared successfully', true);
-                    setStatus('Cache cleared! Click reload to download again.', 'default');
-                    if (this._reloadBtn) this._reloadBtn.disabled = false;
-                } catch (error) {
-                    logger.error(`Failed to clear cache: ${error.message}`);
-                    setStatus('Error clearing cache: ' + error.message, 'default');
-                }
-            }
-
-            _handleReload() {
-                location.reload();
+                        db.close();
+                        resolve(files);
+                    };
+                    request.onerror = () => {
+                        db.close();
+                        reject(request.error);
+                    };
+                });
+            } catch (error) {
+                logger.error(`Error listing cached files: ${error.message}`);
+                return [];
             }
         }
 
-        async function loadMap() {
-            // Create offline control instance
-            const offlineControl = new OfflineControl();
+        // Display cached files in UI
+        async function displayCachedFiles() {
+            const files = await listCachedFiles();
 
-            try {
-                offlineControl.disableButtons();
+            cachedFilesList.innerHTML = '';
 
-                logger.info(`Opening IndexedDB: ${dbname}/${tablename}`, true);
-                setStatus('Opening database...', 'loading');
-                const db = await IndexedDBSource.openDb(dbname, tablename);
-                logger.info('IndexedDB opened successfully');
+            if (files.length === 0) {
+                cachedFilesSection.classList.remove('active');
+                logger.debug('No cached files found');
+                return;
+            }
 
-                const offlineSource = new IndexedDBSource(db, filename, tablename);
-                logger.info(`Checking if PMTiles exists: ${filename}`);
-                const sourceExists = await offlineSource.exists();
+            cachedFilesSection.classList.add('active');
+            logger.info(`Found ${files.length} cached file(s)`, true);
 
-                if (!sourceExists) {
-                    logger.warn(`PMTiles not cached, downloading from: ${PMTILES_URL}`, true);
-                    setStatus('Downloading map data (this may take a moment)...', 'loading');
-                    const downloadStart = performance.now();
-                    const response = await fetch(PMTILES_URL);
-                    const buffer = await response.arrayBuffer();
-                    const downloadTime = (performance.now() - downloadStart).toFixed(2);
-                    const sizeMB = (buffer.byteLength / 1024 / 1024).toFixed(2);
-                    logger.info(`Downloaded ${sizeMB} MB in ${downloadTime}ms`, true);
+            files.forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'cached-file-item';
 
-                    const blob = new Blob([buffer], { type: "application/octet-stream" });
+                const info = document.createElement('div');
+                info.className = 'cached-file-info';
 
-                    setStatus('Storing in IndexedDB...', 'loading');
-                    logger.info(`Storing PMTiles in IndexedDB (${sizeMB} MB)...`);
-                    const storeStart = performance.now();
-                    await offlineSource.setSource({ filename, blob });
-                    const storeTime = (performance.now() - storeStart).toFixed(2);
-                    logger.info(`Stored in IndexedDB in ${storeTime}ms`, true);
-                    setStatus('Map cached! Now works offline!', 'cached');
-                } else {
-                    logger.info('PMTiles found in cache, using offline source', true);
-                    setStatus('Using cached map (offline mode active)', 'cached');
+                const name = document.createElement('div');
+                name.className = 'cached-file-name';
+                name.textContent = file.filename;
+
+                const size = document.createElement('div');
+                size.className = 'cached-file-size';
+                size.textContent = `${(file.size / 1024 / 1024).toFixed(1)} MB`;
+
+                info.appendChild(name);
+                info.appendChild(size);
+
+                const actions = document.createElement('div');
+                actions.className = 'cached-file-actions';
+
+                const loadBtn = document.createElement('button');
+                loadBtn.className = 'btn-load';
+                loadBtn.textContent = 'Load';
+                loadBtn.onclick = () => {
+                    logger.info(`Loading cached file: ${file.filename}`, true);
+                    loadCachedFile(file.filename);
+                };
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-delete';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = () => {
+                    if (confirm(`Delete ${file.filename}?`)) {
+                        deleteCachedFile(file.filename);
+                    }
+                };
+
+                actions.appendChild(loadBtn);
+                actions.appendChild(deleteBtn);
+
+                item.appendChild(info);
+                item.appendChild(actions);
+
+                cachedFilesList.appendChild(item);
+            });
+        }
+
+        // Setup tooltip for feature hovering
+        function setupTooltip(map) {
+            // Common callback to update tooltip
+            function updateTooltip(point, pageX, pageY) {
+                if (!tooltipEnabled) {
+                    tooltip.classList.remove('visible');
+                    return;
                 }
 
+                const features = map.queryRenderedFeatures(point);
+                if (features.length > 0) {
+                    const feature = features[0];
+                    const props = feature.properties;
+
+                    // Build tooltip content as HTML table
+                    const entries = Object.entries(props)
+                        .filter(([k, v]) => v !== null && v !== undefined && v !== '');
+
+                    if (entries.length > 0) {
+                        const tableRows = entries
+                            .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`)
+                            .join('');
+
+                        tooltip.innerHTML = `<table>${tableRows}</table>`;
+                        tooltip.style.left = pageX + 10 + 'px';
+                        tooltip.style.top = pageY + 10 + 'px';
+                        tooltip.classList.add('visible');
+                    } else {
+                        tooltip.classList.remove('visible');
+                    }
+                } else {
+                    tooltip.classList.remove('visible');
+                }
+            }
+
+            // Mouse move event
+            map.on('mousemove', (e) => {
+                lastMouseEvent = e;
+                updateTooltip(e.point, e.originalEvent.pageX, e.originalEvent.pageY);
+            });
+
+            // Mouse leave event
+            map.on('mouseleave', () => {
+                tooltip.classList.remove('visible');
+                lastMouseEvent = null;
+            });
+
+            // Touch events
+            map.on('touchstart', (e) => {
+                if (!tooltipEnabled) return;
+
+                const touch = e.originalEvent.touches[0];
+                updateTooltip(e.point, touch.pageX, touch.pageY);
+
+                // Auto-hide on touch after 2 seconds
+                setTimeout(() => tooltip.classList.remove('visible'), 2000);
+            });
+
+            // Refresh tooltip on zoom/move end
+            map.on('zoomend', () => {
+                if (lastMouseEvent && tooltipEnabled) {
+                    updateTooltip(lastMouseEvent.point, lastMouseEvent.originalEvent.pageX, lastMouseEvent.originalEvent.pageY);
+                }
+            });
+
+            map.on('moveend', () => {
+                if (lastMouseEvent && tooltipEnabled) {
+                    updateTooltip(lastMouseEvent.point, lastMouseEvent.originalEvent.pageX, lastMouseEvent.originalEvent.pageY);
+                }
+            });
+
+            map.on('sourcedata', () => {
+                if (lastMouseEvent && tooltipEnabled) {
+                    updateTooltip(lastMouseEvent.point, lastMouseEvent.originalEvent.pageX, lastMouseEvent.originalEvent.pageY);
+                }
+            });
+        }
+
+        // Load a cached file
+        async function loadCachedFile(filename) {
+            try {
+                uploadOverlay.classList.add('hidden');
+                setStatus('Loading...', 'loading');
+
+                if (currentMap) {
+                    logger.info('Removing existing map');
+                    currentMap.remove();
+                    currentMap = null;
+                }
+
+                logger.info(`Loading from cache: ${filename}`, true);
+                const db = await IndexedDBSource.openDb(DB_NAME, TABLE_NAME);
+                const offlineSource = new IndexedDBSource(db, filename, TABLE_NAME);
+
+                // Initialize PMTiles protocol
+                const protocol = new pmtiles.Protocol();
+                maplibregl.addProtocol("pmtiles", protocol.tile);
+
+                const p = new pmtiles.PMTiles(offlineSource);
+                protocol.add(p);
+
+                // Get metadata
+                const metadata = await p.getMetadata();
+                logger.info(`Metadata: ${JSON.stringify(metadata, null, 2)}`);
+
+                // Get header for geographic bounds and center
+                const header = await p.getHeader();
+                logger.info(`Header bounds: [${header.minLon}, ${header.minLat}, ${header.maxLon}, ${header.maxLat}]`);
+                logger.info(`Header center: [${header.centerLon}, ${header.centerLat}] @ zoom ${header.centerZoom}`);
+
+                // Create style
+                const style = createGenericStyle(filename, metadata);
+
+                // Determine initial view from header
+                const center = header.centerLon !== undefined && header.centerLat !== undefined
+                    ? [header.centerLon, header.centerLat]
+                    : DEFAULT_CENTER;
+                const zoom = header.centerZoom !== undefined ? header.centerZoom : DEFAULT_ZOOM;
+
+                // Create map
+                logger.info('Creating map');
+                currentMap = new maplibregl.Map({
+                    container: 'map',
+                    style: style,
+                    center: center,
+                    zoom: zoom
+                });
+
+                currentMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+                currentMap.on('load', () => {
+                    logger.info('Map loaded successfully', true);
+                    setStatus('Loaded (Offline)', 'cached');
+
+                    // Setup tooltip
+                    setupTooltip(currentMap);
+
+                    // Fit to bounds from header
+                    if (header.minLon !== undefined && header.maxLon !== undefined &&
+                        header.minLat !== undefined && header.maxLat !== undefined) {
+                        logger.info(`Fitting to bounds: [${header.minLon}, ${header.minLat}, ${header.maxLon}, ${header.maxLat}]`, true);
+                        currentMap.fitBounds([
+                            [header.minLon, header.minLat], // Southwest
+                            [header.maxLon, header.maxLat]  // Northeast
+                        ], {
+                            padding: 20,
+                            duration: 1000
+                        });
+                    }
+                });
+
+                currentMap.on('error', (e) => {
+                    logger.error(`Map error: ${e.error.message}`);
+                });
+
+                // Get blob for size display
+                const blob = await offlineSource.getAndSliceBlob(0, 1000000000);
+                const fileSize = blob ? (blob.size / 1024 / 1024).toFixed(1) : '?';
+                fileInfo.textContent = `${filename} (${fileSize} MB)`;
+                fileInfo.className = 'active';
+
+            } catch (error) {
+                logger.error(`Error loading cached file: ${error.message}`);
+                setStatus('Error', 'error');
+                uploadOverlay.classList.remove('hidden');
+            }
+        }
+
+        // Delete a cached file
+        async function deleteCachedFile(filename) {
+            try {
+                logger.warn(`Deleting cached file: ${filename}`, true);
+                const db = await IndexedDBSource.openDb(DB_NAME, TABLE_NAME);
+                const tx = db.transaction([TABLE_NAME], 'readwrite');
+                const store = tx.objectStore(TABLE_NAME);
+
+                await new Promise((resolve, reject) => {
+                    const request = store.delete(filename);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+
+                db.close();
+                logger.info(`Deleted: ${filename}`, true);
+
+                // Refresh the cached files list
+                await displayCachedFiles();
+
+                // If the deleted file was currently loaded, reset
+                if (fileInfo.textContent.includes(filename)) {
+                    if (currentMap) {
+                        currentMap.remove();
+                        currentMap = null;
+                    }
+                    fileInfo.className = '';
+                    setStatus('Ready', 'default');
+                    uploadOverlay.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                logger.error(`Error deleting file: ${error.message}`);
+            }
+        }
+
+        // Create generic style from PMTiles metadata
+        function createGenericStyle(filename, metadata) {
+            const layers = [];
+
+            // Background layer
+            layers.push({
+                id: 'background',
+                type: 'background',
+                paint: { 'background-color': '#f8f8f8' }
+            });
+
+            // Get vector layers if available
+            if (metadata.vector_layers) {
+                const colors = ['#80b1d3', '#fb8072', '#fdb462', '#b3de69', '#fccde5', '#d9d9d9', '#bc80bd', '#ccebc5'];
+
+                metadata.vector_layers.forEach((layer, idx) => {
+                    const layerName = layer.id || layer.name;
+                    const color = colors[idx % colors.length];
+
+                    // Add fill layer for polygons only
+                    layers.push({
+                        id: `${layerName}-fill`,
+                        source: 'pmtiles-source',
+                        'source-layer': layerName,
+                        type: 'fill',
+                        filter: ['==', ['geometry-type'], 'Polygon'],
+                        paint: {
+                            'fill-color': color,
+                            'fill-opacity': 0.6
+                        }
+                    });
+
+                    // Add line layer for linestrings only
+                    layers.push({
+                        id: `${layerName}-line`,
+                        source: 'pmtiles-source',
+                        'source-layer': layerName,
+                        type: 'line',
+                        filter: ['in', ['geometry-type'], ['literal', ['LineString', 'MultiLineString']]],
+                        paint: {
+                            'line-color': color,
+                            'line-width': 1.5
+                        }
+                    });
+
+                    // Add circle layer for points
+                    layers.push({
+                        id: `${layerName}-circle`,
+                        source: 'pmtiles-source',
+                        'source-layer': layerName,
+                        type: 'circle',
+                        filter: ['==', ['geometry-type'], 'Point'],
+                        paint: {
+                            'circle-color': color,
+                            'circle-radius': 4,
+                            'circle-stroke-width': 1,
+                            'circle-stroke-color': '#fff'
+                        }
+                    });
+
+                    logger.info(`Added layer: ${layerName}`);
+                });
+            } else {
+                // Fallback: generic layers
+                logger.warn('No vector_layers metadata found, using generic layers');
+                layers.push({
+                    id: 'generic-fill',
+                    source: 'pmtiles-source',
+                    'source-layer': 'default',
+                    type: 'fill',
+                    filter: ['==', ['geometry-type'], 'Polygon'],
+                    paint: { 'fill-color': '#80b1d3', 'fill-opacity': 0.6 }
+                });
+                layers.push({
+                    id: 'generic-line',
+                    source: 'pmtiles-source',
+                    'source-layer': 'default',
+                    type: 'line',
+                    filter: ['in', ['geometry-type'], ['literal', ['LineString', 'MultiLineString']]],
+                    paint: { 'line-color': '#fc8d62', 'line-width': 1.5 }
+                });
+                layers.push({
+                    id: 'generic-circle',
+                    source: 'pmtiles-source',
+                    'source-layer': 'default',
+                    type: 'circle',
+                    filter: ['==', ['geometry-type'], 'Point'],
+                    paint: {
+                        'circle-color': '#b3de69',
+                        'circle-radius': 4,
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#fff'
+                    }
+                });
+            }
+
+            return {
+                version: 8,
+                sources: {
+                    'pmtiles-source': {
+                        type: 'vector',
+                        url: `pmtiles://${filename}`,
+                        attribution: metadata.attribution || '© OpenStreetMap contributors'
+                    }
+                },
+                layers: layers
+            };
+        }
+
+        // Load PMTiles
+        async function loadPMTiles(source, filename, isUpload = false) {
+            let storedNewFile = false;
+            try {
+                uploadOverlay.classList.add('hidden');
+                setStatus('Loading...', 'loading');
+
+                if (currentMap) {
+                    logger.info('Removing existing map');
+                    currentMap.remove();
+                    currentMap = null;
+                }
+
+                logger.info(`Opening IndexedDB: ${DB_NAME}/${TABLE_NAME}`, true);
+                const db = await IndexedDBSource.openDb(DB_NAME, TABLE_NAME);
+                logger.info('IndexedDB opened successfully');
+
+                const offlineSource = new IndexedDBSource(db, filename, TABLE_NAME);
+                const sourceExists = await offlineSource.exists();
+
+                let blob;
+                if (!sourceExists) {
+                    storedNewFile = true;
+                    if (isUpload) {
+                        logger.info(`Storing uploaded file: ${filename}`, true);
+                        const storeStart = performance.now();
+                        await offlineSource.setSource({ filename, blob: source });
+                        logger.info(`Stored in ${(performance.now() - storeStart).toFixed(2)}ms`, true);
+                        blob = source;
+                    } else {
+                        logger.warn(`Downloading: ${source}`, true);
+                        const downloadStart = performance.now();
+                        const response = await fetch(source);
+                        const buffer = await response.arrayBuffer();
+                        const downloadTime = (performance.now() - downloadStart).toFixed(2);
+                        const sizeMB = (buffer.byteLength / 1024 / 1024).toFixed(2);
+                        logger.info(`Downloaded ${sizeMB} MB in ${downloadTime}ms`, true);
+
+                        blob = new Blob([buffer], { type: "application/octet-stream" });
+
+                        logger.info(`Storing in IndexedDB...`);
+                        const storeStart = performance.now();
+                        await offlineSource.setSource({ filename, blob });
+                        logger.info(`Stored in ${(performance.now() - storeStart).toFixed(2)}ms`, true);
+                    }
+                } else {
+                    logger.info('Using cached PMTiles', true);
+                    // Get blob for size display
+                    blob = await offlineSource.getAndSliceBlob(0, 1000000000);
+                }
+
+                // Initialize PMTiles protocol
                 logger.info('Initializing PMTiles protocol');
                 const protocol = new pmtiles.Protocol();
                 maplibregl.addProtocol("pmtiles", protocol.tile);
 
-                logger.info('Creating PMTiles instance with offline source');
                 const p = new pmtiles.PMTiles(offlineSource);
                 protocol.add(p);
 
+                // Get metadata
+                const metadata = await p.getMetadata();
+                logger.info(`Metadata: ${JSON.stringify(metadata, null, 2)}`);
+
+                // Get header for geographic bounds and center
+                const header = await p.getHeader();
+                logger.info(`Header bounds: [${header.minLon}, ${header.minLat}, ${header.maxLon}, ${header.maxLat}]`);
+                logger.info(`Header center: [${header.centerLon}, ${header.centerLat}] @ zoom ${header.centerZoom}`);
+
+                // Create style
+                const style = createGenericStyle(filename, metadata);
+
+                // Determine initial view from header
+                const center = header.centerLon !== undefined && header.centerLat !== undefined
+                    ? [header.centerLon, header.centerLat]
+                    : DEFAULT_CENTER;
+                const zoom = header.centerZoom !== undefined ? header.centerZoom : DEFAULT_ZOOM;
+
                 // Create map
-                logger.info('Creating MapLibre GL map instance');
-                const map = new maplibregl.Map({
+                logger.info('Creating map');
+                currentMap = new maplibregl.Map({
                     container: 'map',
-                    center: [11.2558, 43.7696], // Florence, Italy
-                    zoom: 12,
-                    style: {
-                        version: 8,
-                        sources: {
-                            protomaps: {
-                                type: "vector",
-                                url: `pmtiles://${filename}`,
-                                attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>'
-                            }
-                        },
-                        layers: [
-                            {
-                                id: 'background',
-                                type: 'background',
-                                paint: { 'background-color': '#f8f8f8' }
-                            },
-                            {
-                                id: 'water',
-                                source: 'protomaps',
-                                'source-layer': 'water',
-                                type: 'fill',
-                                paint: { 'fill-color': '#80b1d3' }
-                            },
-                            {
-                                id: 'buildings',
-                                source: 'protomaps',
-                                'source-layer': 'buildings',
-                                type: 'fill',
-                                paint: { 'fill-color': '#d9d9d9' }
-                            },
-                            {
-                                id: 'roads',
-                                source: 'protomaps',
-                                'source-layer': 'roads',
-                                type: 'line',
-                                paint: {
-                                    'line-color': '#fc8d62',
-                                    'line-width': 1
-                                }
-                            }
-                        ]
-                    }
+                    style: style,
+                    center: center,
+                    zoom: zoom
                 });
 
-                // Map event listeners for logging
-                map.on('load', () => {
+                currentMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+                currentMap.on('load', () => {
                     logger.info('Map loaded successfully', true);
-                });
+                    setStatus('Loaded (Offline)', 'cached');
 
-                map.on('data', (e) => {
-                    if (e.dataType === 'source' && e.isSourceLoaded) {
-                        logger.debug(`Source data loaded: ${e.sourceId}`);
+                    // Setup tooltip
+                    setupTooltip(currentMap);
+
+                    // Fit to bounds from header
+                    if (header.minLon !== undefined && header.maxLon !== undefined &&
+                        header.minLat !== undefined && header.maxLat !== undefined) {
+                        logger.info(`Fitting to bounds: [${header.minLon}, ${header.minLat}, ${header.maxLon}, ${header.maxLat}]`, true);
+                        currentMap.fitBounds([
+                            [header.minLon, header.minLat], // Southwest
+                            [header.maxLon, header.maxLat]  // Northeast
+                        ], {
+                            padding: 20,
+                            duration: 1000
+                        });
                     }
                 });
 
-                map.on('sourcedata', (e) => {
-                    if (e.sourceId === 'protomaps' && e.isSourceLoaded) {
-                        logger.info('PMTiles source data loaded');
-                    }
-                });
-
-                map.on('idle', () => {
-                    logger.debug('Map render idle');
-                });
-
-                map.on('movestart', () => {
-                    logger.debug('Map move started');
-                });
-
-                map.on('moveend', () => {
-                    const center = map.getCenter();
-                    const zoom = map.getZoom();
-                    logger.debug(`Map moved to: [${center.lng.toFixed(4)}, ${center.lat.toFixed(4)}] zoom: ${zoom.toFixed(2)}`);
-                });
-
-                map.on('zoomstart', () => {
-                    logger.debug('Zoom started');
-                });
-
-                map.on('zoomend', () => {
-                    logger.debug(`Zoom ended: ${map.getZoom().toFixed(2)}`);
-                });
-
-                map.on('error', (e) => {
+                currentMap.on('error', (e) => {
                     logger.error(`Map error: ${e.error.message}`);
                 });
 
-                // Add controls to the map
-                logger.info('Adding map controls');
-                map.addControl(offlineControl);
-                map.addControl(new maplibregl.NavigationControl());
+                // Update file info badge
+                const fileSize = blob ? (blob.size / 1024 / 1024).toFixed(1) : '?';
+                fileInfo.textContent = `${filename} (${fileSize} MB)`;
+                fileInfo.className = 'active';
 
-                offlineControl.enableButtons();
-                logger.info('Map initialization complete', true);
+                // Refresh cached files list if we stored a new file
+                if (storedNewFile) {
+                    await displayCachedFiles();
+                }
 
             } catch (error) {
-                setStatus('Error: ' + error.message, 'default');
-                console.error('Error loading map:', error);
-                offlineControl.enableButtons();
+                logger.error(`Error loading PMTiles: ${error.message}`);
+                setStatus('Error', 'error');
+                uploadOverlay.classList.remove('hidden');
             }
         }
 
-        // Start loading
-        loadMap();
+        // Event Listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.pmtiles')) {
+                logger.info(`File dropped: ${file.name}`, true);
+                loadPMTiles(file, file.name, true);
+            } else {
+                logger.error('Please drop a .pmtiles file');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                logger.info(`File selected: ${file.name}`, true);
+                loadPMTiles(file, file.name, true);
+            }
+        });
+
+        loadDefaultBtn.addEventListener('click', () => {
+            logger.info('Loading default dataset', true);
+            loadPMTiles(DEFAULT_URL, DEFAULT_FILENAME, false);
+        });
+
+        btnUpload.addEventListener('click', () => {
+            uploadOverlay.classList.toggle('hidden');
+            if (!uploadOverlay.classList.contains('hidden')) {
+                displayCachedFiles();
+            }
+        });
+
+        btnClear.addEventListener('click', async () => {
+            try {
+                logger.warn('Clearing cache...', true);
+                const db = await IndexedDBSource.openDb(DB_NAME, TABLE_NAME);
+                const tx = db.transaction([TABLE_NAME], 'readwrite');
+                const store = tx.objectStore(TABLE_NAME);
+                await new Promise((resolve, reject) => {
+                    const req = store.clear();
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+                db.close();
+                logger.info('Cache cleared', true);
+
+                if (currentMap) {
+                    currentMap.remove();
+                    currentMap = null;
+                }
+                fileInfo.className = '';
+                setStatus('Ready', 'default');
+                uploadOverlay.classList.remove('hidden');
+
+                // Refresh cached files list
+                await displayCachedFiles();
+            } catch (error) {
+                logger.error(`Error clearing cache: ${error.message}`);
+            }
+        });
+
+        btnTooltip.addEventListener('click', () => {
+            tooltipEnabled = !tooltipEnabled;
+            if (tooltipEnabled) {
+                btnTooltip.classList.add('active');
+                logger.info('Tooltip enabled', true);
+            } else {
+                btnTooltip.classList.remove('active');
+                tooltip.classList.remove('visible');
+                logger.info('Tooltip disabled', true);
+            }
+        });
+
+        logClearBtn.addEventListener('click', () => logger.clear());
+
+        // Tab switching
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const tabName = tab.dataset.tab;
+                if (tabName === 'map') {
+                    mapView.style.bottom = '33.33%';
+                    logPanel.style.height = '33.33%';
+                } else if (tabName === 'log') {
+                    mapView.style.bottom = '66.66%';
+                    logPanel.style.height = '66.66%';
+                }
+            });
+        });
+
+        // Initialize
+        logger.info('PMTiles Offline Demo initialized', true);
+        logger.info('Drag and drop a .pmtiles file or load the default dataset');
+
+        // Check for cached files on startup
+        displayCachedFiles();
     </script>
 
     <script>
-        // Register service worker for offline support
+        // Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker registered:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('Service Worker registration failed:', error);
-                    });
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
             });
         }
     </script>
