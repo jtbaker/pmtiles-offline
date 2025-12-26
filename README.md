@@ -154,6 +154,14 @@ Retrieves a byte range from the stored PMTiles file. This method implements the 
 - Reducing server load by caching map tiles locally
 - Field data collection apps that need to work offline
 
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
+- Commit message conventions (for semantic versioning)
+- Development setup
+- Pull request process
+- How automated releases work
+
 ## License
 
 MIT
