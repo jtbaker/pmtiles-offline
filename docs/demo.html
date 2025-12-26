@@ -34,8 +34,114 @@
         #map {
             position: absolute;
             top: 50px;
+            left: 0;
+            right: 0;
+            bottom: 33.33%;
+        }
+
+        #log-container {
+            position: absolute;
+            left: 0;
+            right: 0;
             bottom: 0;
-            width: 100%;
+            height: 33.33%;
+            background: #1e1e1e;
+            border-top: 2px solid #667eea;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #log-header {
+            background: #2d2d2d;
+            color: #e0e0e0;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-bottom: 1px solid #3d3d3d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #log-clear {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        #log-clear:hover {
+            background: #5568d3;
+        }
+
+        #log {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 8px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        #log::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #log::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+
+        #log::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 4px;
+        }
+
+        #log::-webkit-scrollbar-thumb:hover {
+            background: #5568d3;
+        }
+
+        .log-entry {
+            margin: 2px 0;
+            padding: 4px 6px;
+            border-radius: 3px;
+            word-wrap: break-word;
+        }
+
+        .log-entry.debug {
+            color: #9cdcfe;
+        }
+
+        .log-entry.info {
+            color: #4ec9b0;
+        }
+
+        .log-entry.warn {
+            color: #dcdcaa;
+            background: rgba(220, 220, 170, 0.1);
+        }
+
+        .log-entry.error {
+            color: #f48771;
+            background: rgba(244, 135, 113, 0.1);
+        }
+
+        .log-timestamp {
+            color: #858585;
+            margin-right: 8px;
+        }
+
+        .log-message {
+            color: inherit;
+        }
+
+        .log-entry.highlight {
+            background: rgba(102, 126, 234, 0.2);
+            border-left: 3px solid #667eea;
+            padding-left: 8px;
         }
 
         #status {
@@ -60,18 +166,14 @@
             background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
         }
 
-        .controls {
-            position: absolute;
-            top: 60px;
-            right: 10px;
-            z-index: 2;
+        .maplibregl-ctrl-offline {
             background: white;
             padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.1);
         }
 
-        .controls button {
+        .maplibregl-ctrl-offline button {
             display: block;
             width: 100%;
             margin: 5px 0;
@@ -82,13 +184,14 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
+            font-weight: 500;
         }
 
-        .controls button:hover {
+        .maplibregl-ctrl-offline button:hover {
             background: #5568d3;
         }
 
-        .controls button:disabled {
+        .maplibregl-ctrl-offline button:disabled {
             background: #cbd5e0;
             cursor: not-allowed;
         }
@@ -96,23 +199,114 @@
 </head>
 <body>
     <div id="status">Initializing...</div>
-    <div class="controls">
-        <button id="clearCache" title="Clear cached map data">Clear Cache</button>
-        <button id="reload" title="Reload map">Reload Map</button>
-    </div>
     <div id="map"></div>
+    <div id="log-container">
+        <div id="log-header">
+            <span>Technical Log</span>
+            <button id="log-clear">Clear Log</button>
+        </div>
+        <div id="log"></div>
+    </div>
 
     <script type="module">
         import { IndexedDBSource } from "pmtiles-offline";
 
         const status = document.getElementById('status');
-        const clearCacheBtn = document.getElementById('clearCache');
-        const reloadBtn = document.getElementById('reload');
+        const logElement = document.getElementById('log');
+        const logClearBtn = document.getElementById('log-clear');
 
         function setStatus(message, type = 'default') {
             status.textContent = message;
             status.className = type;
         }
+
+        // Logging system
+        const logger = {
+            log(message, level = 'info', highlight = false) {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${level}`;
+                if (highlight) entry.classList.add('highlight');
+
+                const timestamp = new Date().toLocaleTimeString('en-US', {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    fractionalSecondDigits: 3
+                });
+
+                entry.innerHTML = `<span class="log-timestamp">[${timestamp}]</span><span class="log-message">${message}</span>`;
+                logElement.appendChild(entry);
+
+                // Auto-scroll to bottom
+                logElement.scrollTop = logElement.scrollHeight;
+            },
+
+            debug(message, highlight = false) {
+                this.log(message, 'debug', highlight);
+            },
+
+            info(message, highlight = false) {
+                this.log(message, 'info', highlight);
+            },
+
+            warn(message, highlight = false) {
+                this.log(message, 'warn', highlight);
+            },
+
+            error(message, highlight = false) {
+                this.log(message, 'error', highlight);
+            },
+
+            clear() {
+                logElement.innerHTML = '';
+            }
+        };
+
+        // Clear log button
+        logClearBtn.addEventListener('click', () => logger.clear());
+
+        // Intercept console methods to capture IndexedDB logs
+        const originalConsoleDebug = console.debug;
+        const originalConsoleLog = console.log;
+        const originalConsoleInfo = console.info;
+        const originalConsoleWarn = console.warn;
+        const originalConsoleError = console.error;
+
+        console.debug = function(...args) {
+            const message = args.join(' ');
+            // Highlight IndexedDB timing logs
+            const isIndexedDBLog = message.includes('[IndexedDB]');
+            logger.debug(message, isIndexedDBLog);
+            originalConsoleDebug.apply(console, args);
+        };
+
+        console.log = function(...args) {
+            const message = args.join(' ');
+            logger.info(message);
+            originalConsoleLog.apply(console, args);
+        };
+
+        console.info = function(...args) {
+            const message = args.join(' ');
+            logger.info(message);
+            originalConsoleInfo.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+            const message = args.join(' ');
+            logger.warn(message);
+            originalConsoleWarn.apply(console, args);
+        };
+
+        console.error = function(...args) {
+            const message = args.join(' ');
+            logger.error(message);
+            originalConsoleError.apply(console, args);
+        };
+
+        // Initial log entry
+        logger.info('PMTiles Offline Demo initialized', true);
 
         // Using a small PMTiles file from protomaps for the demo
         const PMTILES_URL = "https://pmtiles.io/protomaps(vector)ODbL_firenze.pmtiles";
@@ -120,55 +314,138 @@
         const dbname = "pmtiles-offline-demo";
         const tablename = "tiles";
 
-        async function clearCache() {
-            try {
-                const db = await IndexedDBSource.openDb(dbname, tablename);
-                const transaction = db.transaction([tablename], 'readwrite');
-                const store = transaction.objectStore(tablename);
-                await new Promise((resolve, reject) => {
-                    const request = store.delete(filename);
-                    request.onsuccess = () => resolve();
-                    request.onerror = () => reject(request.error);
-                });
-                db.close();
-                setStatus('Cache cleared! Click reload to download again.', 'default');
-                reloadBtn.disabled = false;
-            } catch (error) {
-                setStatus('Error clearing cache: ' + error.message, 'default');
+        /**
+         * OfflineControl - A MapLibre control for managing offline cache
+         * Implements the IControl interface
+         */
+        class OfflineControl {
+            constructor() {
+                this._container = null;
+                this._clearCacheBtn = null;
+                this._reloadBtn = null;
+            }
+
+            onAdd(map) {
+                this._map = map;
+                this._container = document.createElement('div');
+                this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group maplibregl-ctrl-offline';
+
+                // Create Clear Cache button
+                this._clearCacheBtn = document.createElement('button');
+                this._clearCacheBtn.textContent = 'Clear Cache';
+                this._clearCacheBtn.title = 'Clear cached map data';
+                this._clearCacheBtn.addEventListener('click', () => this._handleClearCache());
+
+                // Create Reload button
+                this._reloadBtn = document.createElement('button');
+                this._reloadBtn.textContent = 'Reload Map';
+                this._reloadBtn.title = 'Reload map';
+                this._reloadBtn.addEventListener('click', () => this._handleReload());
+
+                this._container.appendChild(this._clearCacheBtn);
+                this._container.appendChild(this._reloadBtn);
+
+                return this._container;
+            }
+
+            onRemove() {
+                if (this._container && this._container.parentNode) {
+                    this._container.parentNode.removeChild(this._container);
+                }
+                this._map = null;
+            }
+
+            getDefaultPosition() {
+                return 'top-right';
+            }
+
+            // Public methods for controlling button states
+            disableButtons() {
+                if (this._clearCacheBtn) this._clearCacheBtn.disabled = true;
+                if (this._reloadBtn) this._reloadBtn.disabled = true;
+            }
+
+            enableButtons() {
+                if (this._clearCacheBtn) this._clearCacheBtn.disabled = false;
+                if (this._reloadBtn) this._reloadBtn.disabled = false;
+            }
+
+            async _handleClearCache() {
+                try {
+                    logger.warn('Clearing PMTiles cache...', true);
+                    const db = await IndexedDBSource.openDb(dbname, tablename);
+                    const transaction = db.transaction([tablename], 'readwrite');
+                    const store = transaction.objectStore(tablename);
+                    await new Promise((resolve, reject) => {
+                        const request = store.delete(filename);
+                        request.onsuccess = () => resolve();
+                        request.onerror = () => reject(request.error);
+                    });
+                    db.close();
+                    logger.info('Cache cleared successfully', true);
+                    setStatus('Cache cleared! Click reload to download again.', 'default');
+                    if (this._reloadBtn) this._reloadBtn.disabled = false;
+                } catch (error) {
+                    logger.error(`Failed to clear cache: ${error.message}`);
+                    setStatus('Error clearing cache: ' + error.message, 'default');
+                }
+            }
+
+            _handleReload() {
+                location.reload();
             }
         }
 
         async function loadMap() {
-            try {
-                clearCacheBtn.disabled = true;
-                reloadBtn.disabled = true;
+            // Create offline control instance
+            const offlineControl = new OfflineControl();
 
+            try {
+                offlineControl.disableButtons();
+
+                logger.info(`Opening IndexedDB: ${dbname}/${tablename}`, true);
                 setStatus('Opening database...', 'loading');
                 const db = await IndexedDBSource.openDb(dbname, tablename);
+                logger.info('IndexedDB opened successfully');
 
                 const offlineSource = new IndexedDBSource(db, filename, tablename);
+                logger.info(`Checking if PMTiles exists: ${filename}`);
                 const sourceExists = await offlineSource.exists();
 
                 if (!sourceExists) {
+                    logger.warn(`PMTiles not cached, downloading from: ${PMTILES_URL}`, true);
                     setStatus('Downloading map data (this may take a moment)...', 'loading');
+                    const downloadStart = performance.now();
                     const response = await fetch(PMTILES_URL);
                     const buffer = await response.arrayBuffer();
+                    const downloadTime = (performance.now() - downloadStart).toFixed(2);
+                    const sizeMB = (buffer.byteLength / 1024 / 1024).toFixed(2);
+                    logger.info(`Downloaded ${sizeMB} MB in ${downloadTime}ms`, true);
+
                     const blob = new Blob([buffer], { type: "application/octet-stream" });
 
                     setStatus('Storing in IndexedDB...', 'loading');
+                    logger.info(`Storing PMTiles in IndexedDB (${sizeMB} MB)...`);
+                    const storeStart = performance.now();
                     await offlineSource.setSource({ filename, blob });
+                    const storeTime = (performance.now() - storeStart).toFixed(2);
+                    logger.info(`Stored in IndexedDB in ${storeTime}ms`, true);
                     setStatus('Map cached! Now works offline!', 'cached');
                 } else {
+                    logger.info('PMTiles found in cache, using offline source', true);
                     setStatus('Using cached map (offline mode active)', 'cached');
                 }
 
+                logger.info('Initializing PMTiles protocol');
                 const protocol = new pmtiles.Protocol();
                 maplibregl.addProtocol("pmtiles", protocol.tile);
 
+                logger.info('Creating PMTiles instance with offline source');
                 const p = new pmtiles.PMTiles(offlineSource);
                 protocol.add(p);
 
                 // Create map
+                logger.info('Creating MapLibre GL map instance');
                 const map = new maplibregl.Map({
                     container: 'map',
                     center: [11.2558, 43.7696], // Florence, Italy
@@ -216,23 +493,63 @@
                     }
                 });
 
+                // Map event listeners for logging
+                map.on('load', () => {
+                    logger.info('Map loaded successfully', true);
+                });
+
+                map.on('data', (e) => {
+                    if (e.dataType === 'source' && e.isSourceLoaded) {
+                        logger.debug(`Source data loaded: ${e.sourceId}`);
+                    }
+                });
+
+                map.on('sourcedata', (e) => {
+                    if (e.sourceId === 'protomaps' && e.isSourceLoaded) {
+                        logger.info('PMTiles source data loaded');
+                    }
+                });
+
+                map.on('idle', () => {
+                    logger.debug('Map render idle');
+                });
+
+                map.on('movestart', () => {
+                    logger.debug('Map move started');
+                });
+
+                map.on('moveend', () => {
+                    const center = map.getCenter();
+                    const zoom = map.getZoom();
+                    logger.debug(`Map moved to: [${center.lng.toFixed(4)}, ${center.lat.toFixed(4)}] zoom: ${zoom.toFixed(2)}`);
+                });
+
+                map.on('zoomstart', () => {
+                    logger.debug('Zoom started');
+                });
+
+                map.on('zoomend', () => {
+                    logger.debug(`Zoom ended: ${map.getZoom().toFixed(2)}`);
+                });
+
+                map.on('error', (e) => {
+                    logger.error(`Map error: ${e.error.message}`);
+                });
+
+                // Add controls to the map
+                logger.info('Adding map controls');
+                map.addControl(offlineControl);
                 map.addControl(new maplibregl.NavigationControl());
 
-                clearCacheBtn.disabled = false;
-                reloadBtn.disabled = false;
+                offlineControl.enableButtons();
+                logger.info('Map initialization complete', true);
 
             } catch (error) {
                 setStatus('Error: ' + error.message, 'default');
                 console.error('Error loading map:', error);
-                clearCacheBtn.disabled = false;
-                reloadBtn.disabled = false;
+                offlineControl.enableButtons();
             }
         }
-
-        clearCacheBtn.addEventListener('click', clearCache);
-        reloadBtn.addEventListener('click', () => {
-            location.reload();
-        });
 
         // Start loading
         loadMap();
