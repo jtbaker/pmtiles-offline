@@ -38,6 +38,7 @@
             </div>
             <span id="file-info" class="hidden px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium"></span>
             <button class="btn-icon bg-transparent border border-gray-300 w-8 h-8 rounded cursor-pointer text-base flex items-center justify-center transition-all duration-200 hover:bg-gray-100 hover:border-gray-400" id="btn-tooltip" title="Toggle Tooltip">ℹ️</button>
+            <button class="btn-icon bg-transparent border border-gray-300 w-8 h-8 rounded cursor-pointer text-base flex items-center justify-center transition-all duration-200 hover:bg-gray-100 hover:border-gray-400" id="btn-tile-boundaries" title="Toggle Tile Boundaries">❐</button>
             <button class="btn-icon bg-transparent border border-gray-300 w-8 h-8 rounded cursor-pointer text-base flex items-center justify-center transition-all duration-200 hover:bg-gray-100 hover:border-gray-400" id="btn-upload" title="Load PMTiles">📁</button>
             <button class="btn-icon bg-transparent border border-gray-300 w-8 h-8 rounded cursor-pointer text-base flex items-center justify-center transition-all duration-200 hover:bg-gray-100 hover:border-gray-400" id="btn-clear" title="Clear Cache">🗑️</button>
         </div>
@@ -111,6 +112,7 @@
         const cachedFilesSection = document.getElementById('cached-files-section');
         const cachedFilesList = document.getElementById('cached-files-list');
         const btnTooltip = document.getElementById('btn-tooltip');
+        const btnTileBoundaries = document.getElementById('btn-tile-boundaries');
 
         // Configuration
         const DEFAULT_URL = "https://pmtiles.io/protomaps(vector)ODbL_firenze.pmtiles";
@@ -122,6 +124,7 @@
 
         let currentMap = null;
         let tooltipEnabled = false;
+        let tileBoundariesEnabled = false;
         let currentPopup = null;
         let consoleOpened = false;
         let hoveredFeatureId = null;
@@ -1057,6 +1060,23 @@
                     currentPopup = null;
                 }
                 logger.info('Tooltip disabled', true);
+            }
+        });
+
+        btnTileBoundaries.addEventListener('click', () => {
+            tileBoundariesEnabled = !tileBoundariesEnabled;
+            if (tileBoundariesEnabled) {
+                btnTileBoundaries.classList.add('bg-blue-50', 'border-blue-600');
+                if (currentMap) {
+                    currentMap.showTileBoundaries = true;
+                }
+                logger.info('Tile boundaries enabled', true);
+            } else {
+                btnTileBoundaries.classList.remove('bg-blue-50', 'border-blue-600');
+                if (currentMap) {
+                    currentMap.showTileBoundaries = false;
+                }
+                logger.info('Tile boundaries disabled', true);
             }
         });
 
