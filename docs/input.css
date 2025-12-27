@@ -1,0 +1,70 @@
+@import "tailwindcss";
+@source "./index.html";
+
+/* Custom animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Custom scrollbar styles for webkit browsers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Maplibre GL Popup styling */
+.maplibregl-popup.feature-popup .maplibregl-popup-content {
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  padding: 0 !important;
+  padding-top: 0 !important;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: monospace;
+  line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Hide the popup tip completely */
+.maplibregl-popup.feature-popup .maplibregl-popup-tip {
+  display: none !important;
+}
+
+/* Completely remove close button and its space */
+.maplibregl-popup.feature-popup .maplibregl-popup-close-button {
+  display: none !important;
+}
+
+.maplibregl-popup.feature-popup .maplibregl-popup-close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure table fills the popup properly */
+.maplibregl-popup.feature-popup table {
+  display: block;
+  margin: 0;
+}
+
+/* Remove any default spacing from child elements */
+.maplibregl-popup.feature-popup .maplibregl-popup-content > * {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* Map cursor style */
+.maplibregl-canvas {
+  cursor: crosshair !important;
+}

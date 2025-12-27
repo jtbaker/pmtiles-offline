@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <title>PMTiles Offline</title>
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PMTiles Offline - Offline Maps for Progressive Web Apps</title>
-    <meta name="description" content="Enable offline usage of PMTiles in Progressive Web Apps and mapping applications by storing PMTiles archives in IndexedDB.">
 
     <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="PMTiles Offline">
@@ -15,382 +14,1019 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+    <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+    <link href="output.css" rel="stylesheet" />
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/pmtiles@4.3.1/dist/pmtiles.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "pmtiles-offline": "https://unpkg.com/pmtiles-offline@1.0.0/dist/index.js"
         }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 60px 0;
-            text-align: center;
-        }
-
-        header h1 {
-            font-size: 3em;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        header p {
-            font-size: 1.3em;
-            margin-bottom: 30px;
-            opacity: 0.95;
-        }
-
-        .buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 12px 30px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-            background: white;
-            color: #667eea;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: 2px solid white;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        section {
-            padding: 60px 0;
-        }
-
-        section h2 {
-            font-size: 2.5em;
-            margin-bottom: 30px;
-            text-align: center;
-            color: #2d3748;
-        }
-
-        .features {
-            background: #f7fafc;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
-        }
-
-        .feature-card {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .feature-card h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 1.5em;
-        }
-
-        .demo {
-            background: white;
-        }
-
-        .demo-container {
-            margin-top: 40px;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .demo-container iframe {
-            width: 100%;
-            height: 600px;
-            border: none;
-        }
-
-        .code-example {
-            background: #f7fafc;
-        }
-
-        pre {
-            background: #2d3748;
-            color: #e2e8f0;
-            padding: 25px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 20px 0;
-            font-size: 0.9em;
-        }
-
-        code {
-            font-family: 'Monaco', 'Courier New', monospace;
-        }
-
-        .installation {
-            background: white;
-        }
-
-        footer {
-            background: #2d3748;
-            color: white;
-            text-align: center;
-            padding: 40px 0;
-        }
-
-        footer a {
-            color: #667eea;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-
-        .badge {
-            display: inline-block;
-            margin: 5px;
-        }
-
-        @media (max-width: 768px) {
-            header h1 {
-                font-size: 2em;
-            }
-
-            header p {
-                font-size: 1.1em;
-            }
-
-            section h2 {
-                font-size: 2em;
-            }
-        }
-    </style>
+    }
+    </script>
 </head>
-<body>
-    <header>
-        <div class="container">
-            <h1>PMTiles Offline</h1>
-            <p>Enable offline maps in Progressive Web Apps with IndexedDB storage</p>
-            <div class="buttons">
-                <a href="https://www.npmjs.com/package/pmtiles-offline" class="btn btn-primary">Get Started</a>
-                <a href="https://github.com/jtbaker/pmtiles-offline" class="btn btn-secondary">View on GitHub</a>
-                <a href="#demo" class="btn btn-secondary">Try Demo</a>
+<body class="m-0 p-0 overflow-hidden bg-gray-100 font-sans">
+    <!-- Header -->
+    <div class="absolute top-0 left-0 right-0 h-12 bg-white border-b border-gray-300 flex items-center px-4 z-[1000]">
+        <div class="text-base font-semibold text-gray-800 mr-6">PMTiles Offline</div>
+        <div class="flex-1"></div>
+        <div class="flex gap-2 items-center">
+            <div class="flex items-center mr-2">
+                <div id="status-indicator" class="w-2 h-2 rounded-full bg-gray-500 mr-2"></div>
+                <span id="status-text" class="text-xs text-gray-600">Ready</span>
             </div>
-            <div style="margin-top: 20px;">
-                <a class="badge" href="https://www.npmjs.com/package/pmtiles-offline">
-                    <img src="https://img.shields.io/npm/v/pmtiles-offline.svg" alt="npm version">
-                </a>
-                <a class="badge" href="https://github.com/jtbaker/pmtiles-offline">
-                    <img src="https://img.shields.io/github/stars/jtbaker/pmtiles-offline?style=social" alt="GitHub stars">
-                </a>
-                <a class="badge" href="https://github.com/jtbaker/pmtiles-offline/blob/main/LICENSE.md">
-                    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
-                </a>
-            </div>
+            <span id="file-info" class="hidden px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium"></span>
+            <button class="btn-icon bg-transparent border border-gray-300 w-8 h-8 rounded cursor-pointer text-base flex items-center justify-center transition-all duration-200 hover:bg-gray-100 hover:border-gray-400" id="btn-tooltip" title="Toggle Tooltip">ℹ️</button>
+            <button class="btn-icon bg-transparent border border-gray-300 w-8 h-8 rounded cursor-pointer text-base flex items-center justify-center transition-all duration-200 hover:bg-gray-100 hover:border-gray-400" id="btn-upload" title="Load PMTiles">📁</button>
+            <button class="btn-icon bg-transparent border border-gray-300 w-8 h-8 rounded cursor-pointer text-base flex items-center justify-center transition-all duration-200 hover:bg-gray-100 hover:border-gray-400" id="btn-clear" title="Clear Cache">🗑️</button>
         </div>
-    </header>
+    </div>
 
-    <section class="features">
-        <div class="container">
-            <h2>Why PMTiles Offline?</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3>True Offline Support</h3>
-                    <p>Store entire PMTiles archives in IndexedDB for complete offline functionality. Your maps work even when there's no network connection.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Efficient Storage</h3>
-                    <p>PMTiles' cloud-optimized format combined with IndexedDB provides efficient local storage. Only download what you need, when you need it.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Easy Integration</h3>
-                    <p>Drop-in replacement for standard PMTiles sources. Works seamlessly with MapLibre GL and other mapping libraries.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Progressive Web Apps</h3>
-                    <p>Perfect for PWAs that need offline map capabilities. Enable field data collection, navigation, and location-based services without connectivity.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Reduce Server Load</h3>
-                    <p>Cache tiles locally to reduce bandwidth costs and server load. Download once, use forever.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Open Source</h3>
-                    <p>MIT licensed and built on open standards. Contribute, customize, or integrate into your projects freely.</p>
+    <!-- Upload Overlay -->
+    <div id="upload-overlay" class="absolute top-12 left-0 right-0 bg-white flex items-center justify-center z-10" style="bottom: 40px;">
+        <div class="bg-white border border-gray-300 rounded-lg p-8 max-w-lg text-center">
+            <h2 class="text-xl font-semibold text-gray-800 mb-2">Load PMTiles Data</h2>
+            <p class="text-sm text-gray-600 mb-6">Drag and drop a .pmtiles file or load the default dataset</p>
+
+            <!-- Cached Files Section -->
+            <div id="cached-files-section" class="mb-4 hidden">
+                <h3 class="text-sm text-gray-800 mb-3 font-semibold">Cached Files</h3>
+                <div id="cached-files-list"></div>
+            </div>
+
+            <div id="drop-zone" class="border-2 border-dashed border-gray-400 rounded-lg p-12 cursor-pointer transition-all duration-200 mb-4 hover:border-blue-600 hover:bg-gray-50">
+                <div class="flex flex-col items-center gap-3">
+                    <div class="text-5xl text-gray-500">📦</div>
+                    <div class="text-sm text-gray-600">Drop .pmtiles file here</div>
+                    <div class="text-xs text-gray-500">or click to browse</div>
                 </div>
             </div>
-        </div>
-    </section>
+            <input type="file" id="file-input" accept=".pmtiles" class="hidden">
 
-    <section class="installation">
-        <div class="container">
-            <h2>Installation</h2>
-            <pre><code>npm install pmtiles-offline</code></pre>
-        </div>
-    </section>
-
-    <section class="code-example">
-        <div class="container">
-            <h2>Quick Start</h2>
-            <p style="text-align: center; margin-bottom: 30px;">Get up and running in minutes with this simple example:</p>
-
-            <pre><code>import { PMTiles } from "pmtiles";
-import { IndexedDBSource } from "pmtiles-offline";
-
-// Open or create an IndexedDB database
-const dbname = "offline-pmtiles";
-const tablename = "offline-pmtiles";
-const db = await IndexedDBSource.openDb(dbname, tablename);
-
-// Fetch a PMTiles file from a server (one-time download)
-const filename = "my-map.pmtiles";
-const response = await fetch("https://example.com/my-map.pmtiles");
-const buffer = await response.arrayBuffer();
-const blob = new Blob([buffer], { type: "application/octet-stream" });
-
-// Create the offline source and store the PMTiles file
-const offlineSource = new IndexedDBSource(db, filename, tablename);
-await offlineSource.setSource({ filename, blob });
-
-// Use the offline source with PMTiles
-const pmtiles = new PMTiles(offlineSource);
-const tile = await pmtiles.getZxy(0, 0, 0);</code></pre>
-
-            <h3 style="margin-top: 50px; text-align: center;">MapLibre GL Integration</h3>
-            <pre><code>import { PMTiles, Protocol } from "pmtiles";
-import { IndexedDBSource } from "pmtiles-offline";
-import maplibregl from "maplibre-gl";
-
-// Setup PMTiles protocol
-const protocol = new Protocol();
-maplibregl.addProtocol("pmtiles", protocol.tile);
-
-// Store PMTiles file in IndexedDB (same as above)
-const db = await IndexedDBSource.openDb("offline-pmtiles", "tiles");
-const offlineSource = new IndexedDBSource(db, "my-map.pmtiles", "tiles");
-// ... download and store file ...
-
-// Register with protocol
-const pmtiles = new PMTiles(offlineSource);
-protocol.add(pmtiles);
-
-// Create map using offline source
-const map = new maplibregl.Map({
-  container: "map",
-  style: {
-    version: 8,
-    sources: {
-      offline_map: {
-        type: "vector",
-        url: "pmtiles://my-map.pmtiles"
-      }
-    },
-    layers: [/* your layers */]
-  }
-});</code></pre>
-        </div>
-    </section>
-
-    <section class="demo" id="demo">
-        <div class="container">
-            <h2>Live Demo</h2>
-            <p style="text-align: center; margin-bottom: 30px;">
-                This demo downloads a PMTiles archive and stores it in IndexedDB. Try refreshing the page or going offline - the map will still work!
-            </p>
-            <div class="demo-container">
-                <iframe src="demo.html" title="PMTiles Offline Demo"></iframe>
+            <div class="flex items-center text-center my-4 text-gray-500 text-xs before:content-[''] before:flex-1 before:border-b before:border-gray-300 after:content-[''] after:flex-1 after:border-b after:border-gray-300">
+                <span class="px-3">OR</span>
             </div>
-            <p style="text-align: center; margin-top: 20px; color: #666;">
-                Check your browser's DevTools to see the PMTiles file stored in IndexedDB
-            </p>
-        </div>
-    </section>
 
-    <section class="features">
-        <div class="container">
-            <h2>Use Cases</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3>Field Data Collection</h3>
-                    <p>Enable workers in remote areas to access maps and collect geospatial data without internet connectivity.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Emergency Response</h3>
-                    <p>Ensure critical mapping applications work during emergencies when network infrastructure may be compromised.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Mobile Applications</h3>
-                    <p>Provide seamless map experiences on mobile devices with limited or unreliable connectivity.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Bandwidth Optimization</h3>
-                    <p>Reduce data usage and costs by caching maps locally for repeated access.</p>
-                </div>
+            <button id="load-default-btn" class="w-full py-3 px-6 bg-blue-600 text-white border-none rounded text-sm font-medium cursor-pointer transition-colors duration-200 hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed">Load Florence, Italy (Default)</button>
+        </div>
+    </div>
+
+    <!-- Map View -->
+    <div id="map-view" class="absolute top-12 left-0 right-0 transition-all duration-300" style="bottom: 40px;">
+        <div id="map" class="w-full h-full"></div>
+    </div>
+
+    <!-- Log Panel -->
+    <div id="log-panel" class="absolute left-0 right-0 bottom-0 bg-[#1e1e1e] border-t border-[#2d2d2d] flex flex-col transition-all duration-300" style="height: 40px;">
+        <div id="log-header" class="bg-[#252525] text-gray-300 px-4 py-2 text-xs font-semibold flex justify-between items-center cursor-pointer hover:bg-[#2d2d2d]">
+            <div class="flex items-center gap-2">
+                <span id="console-toggle-icon">▲</span>
+                <span>Console</span>
             </div>
+            <button id="log-clear" class="bg-transparent text-gray-500 border border-[#3d3d3d] px-3 py-1 rounded cursor-pointer text-[11px] hover:bg-[#2d2d2d] hover:border-gray-600">Clear</button>
         </div>
-    </section>
+        <div id="log" class="flex-1 overflow-y-auto overflow-x-hidden p-2 font-mono text-[11px] leading-normal custom-scrollbar"></div>
+    </div>
 
-    <footer>
-        <div class="container">
-            <p>Made with care by <a href="https://github.com/jtbaker">Jason Baker</a></p>
-            <p style="margin-top: 10px;">
-                <a href="https://github.com/jtbaker/pmtiles-offline">GitHub</a> &nbsp;|&nbsp;
-                <a href="https://www.npmjs.com/package/pmtiles-offline">npm</a> &nbsp;|&nbsp;
-                <a href="https://github.com/jtbaker/pmtiles-offline/issues">Issues</a> &nbsp;|&nbsp;
-                <a href="https://github.com/jtbaker/pmtiles-offline/blob/main/LICENSE">MIT License</a>
-            </p>
-        </div>
-    </footer>
+    <script type="module">
+        import { IndexedDBSource } from "pmtiles-offline";
+
+        // DOM elements
+        const uploadOverlay = document.getElementById('upload-overlay');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const loadDefaultBtn = document.getElementById('load-default-btn');
+        const logElement = document.getElementById('log');
+        const logClearBtn = document.getElementById('log-clear');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const fileInfo = document.getElementById('file-info');
+        const btnUpload = document.getElementById('btn-upload');
+        const btnClear = document.getElementById('btn-clear');
+        const mapView = document.getElementById('map-view');
+        const logPanel = document.getElementById('log-panel');
+        const logHeader = document.getElementById('log-header');
+        const consoleToggleIcon = document.getElementById('console-toggle-icon');
+        const cachedFilesSection = document.getElementById('cached-files-section');
+        const cachedFilesList = document.getElementById('cached-files-list');
+        const btnTooltip = document.getElementById('btn-tooltip');
+
+        // Configuration
+        const DEFAULT_URL = "https://pmtiles.io/protomaps(vector)ODbL_firenze.pmtiles";
+        const DEFAULT_FILENAME = "firenze.pmtiles";
+        const DEFAULT_CENTER = [11.2558, 43.7696];
+        const DEFAULT_ZOOM = 12;
+        const DB_NAME = "pmtiles-offline-demo";
+        const TABLE_NAME = "tiles";
+
+        let currentMap = null;
+        let tooltipEnabled = false;
+        let currentPopup = null;
+        let consoleOpened = false;
+        let hoveredFeatureId = null;
+        let hoveredSourceLayer = null;
+
+        // Logger
+        const logger = {
+            log(message, level = 'info', highlight = false) {
+                const entry = document.createElement('div');
+                entry.className = `my-0.5 px-1.5 py-1 rounded ${
+                    level === 'debug' ? 'text-[#9cdcfe]' :
+                    level === 'info' ? 'text-[#4ec9b0]' :
+                    level === 'warn' ? 'text-[#dcdcaa] bg-[#dcdcaa]/10' :
+                    level === 'error' ? 'text-[#f48771] bg-[#f48771]/10' : ''
+                }`;
+                if (highlight) entry.classList.add('bg-blue-600/20', 'border-l-[3px]', 'border-blue-600', 'pl-2');
+
+                const timestamp = new Date().toLocaleTimeString('en-US', {
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    fractionalSecondDigits: 3
+                });
+
+                entry.innerHTML = `<span class="text-[#858585] mr-2">[${timestamp}]</span><span>${message}</span>`;
+                logElement.appendChild(entry);
+                logElement.scrollTop = logElement.scrollHeight;
+            },
+            debug(msg, hl = false) { this.log(msg, 'debug', hl); },
+            info(msg, hl = false) { this.log(msg, 'info', hl); },
+            warn(msg, hl = false) { this.log(msg, 'warn', hl); },
+            error(msg, hl = false) { this.log(msg, 'error', hl); },
+            clear() { logElement.innerHTML = ''; }
+        };
+
+        // Intercept console
+        const originalConsole = {
+            debug: console.debug,
+            log: console.log,
+            info: console.info,
+            warn: console.warn,
+            error: console.error
+        };
+
+        console.debug = function(...args) {
+            const msg = args.join(' ');
+            logger.debug(msg, msg.includes('[IndexedDB]'));
+            originalConsole.debug.apply(console, args);
+        };
+        console.log = function(...args) { logger.info(args.join(' ')); originalConsole.log.apply(console, args); };
+        console.info = function(...args) { logger.info(args.join(' ')); originalConsole.info.apply(console, args); };
+        console.warn = function(...args) { logger.warn(args.join(' ')); originalConsole.warn.apply(console, args); };
+        console.error = function(...args) { logger.error(args.join(' ')); originalConsole.error.apply(console, args); };
+
+        // Set status
+        function setStatus(text, state = 'default') {
+            statusText.textContent = text;
+            statusIndicator.className = statusIndicator.className.replace(/bg-\S+/g, '');
+            if (state === 'loading') {
+                statusIndicator.classList.add('bg-yellow-500', 'animate-pulse');
+            } else if (state === 'cached') {
+                statusIndicator.classList.add('bg-green-600');
+            } else {
+                statusIndicator.classList.add('bg-gray-500');
+            }
+        }
+
+        // List all cached PMTiles files
+        async function listCachedFiles() {
+            try {
+                const db = await IndexedDBSource.openDb(DB_NAME, TABLE_NAME);
+                const tx = db.transaction([TABLE_NAME], 'readonly');
+                const store = tx.objectStore(TABLE_NAME);
+
+                return new Promise((resolve, reject) => {
+                    const request = store.getAllKeys();
+                    request.onsuccess = async () => {
+                        const keys = request.result;
+                        const files = [];
+
+                        for (const key of keys) {
+                            const getRequest = store.get(key);
+                            await new Promise((res, rej) => {
+                                getRequest.onsuccess = () => {
+                                    const data = getRequest.result;
+                                    if (data && data.blob) {
+                                        files.push({
+                                            filename: data.filename || key,
+                                            size: data.blob.size
+                                        });
+                                    }
+                                    res();
+                                };
+                                getRequest.onerror = () => rej(getRequest.error);
+                            });
+                        }
+
+                        db.close();
+                        resolve(files);
+                    };
+                    request.onerror = () => {
+                        db.close();
+                        reject(request.error);
+                    };
+                });
+            } catch (error) {
+                logger.error(`Error listing cached files: ${error.message}`);
+                return [];
+            }
+        }
+
+        // Display cached files in UI
+        async function displayCachedFiles() {
+            const files = await listCachedFiles();
+
+            cachedFilesList.innerHTML = '';
+
+            if (files.length === 0) {
+                cachedFilesSection.classList.remove('block');
+                cachedFilesSection.classList.add('hidden');
+                logger.debug('No cached files found');
+                return;
+            }
+
+            cachedFilesSection.classList.remove('hidden');
+            cachedFilesSection.classList.add('block');
+            logger.info(`Found ${files.length} cached file(s)`, true);
+
+            files.forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-2.5 px-3 bg-gray-50 border border-gray-300 rounded mb-2 transition-colors duration-200 hover:bg-blue-50';
+
+                const info = document.createElement('div');
+                info.className = 'flex-1 flex flex-col gap-1';
+
+                const name = document.createElement('div');
+                name.className = 'text-[13px] text-gray-800 font-medium';
+                name.textContent = file.filename;
+
+                const size = document.createElement('div');
+                size.className = 'text-[11px] text-gray-600';
+                size.textContent = `${(file.size / 1024 / 1024).toFixed(1)} MB`;
+
+                info.appendChild(name);
+                info.appendChild(size);
+
+                const actions = document.createElement('div');
+                actions.className = 'flex gap-2';
+
+                const loadBtn = document.createElement('button');
+                loadBtn.className = 'px-3 py-1.5 border-none rounded text-xs font-medium cursor-pointer transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700';
+                loadBtn.textContent = 'Load';
+                loadBtn.onclick = () => {
+                    logger.info(`Loading cached file: ${file.filename}`, true);
+                    loadCachedFile(file.filename);
+                };
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'px-3 py-1.5 border-none rounded text-xs font-medium cursor-pointer transition-all duration-200 bg-red-600 text-white hover:bg-red-700';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = () => {
+                    if (confirm(`Delete ${file.filename}?`)) {
+                        deleteCachedFile(file.filename);
+                    }
+                };
+
+                actions.appendChild(loadBtn);
+                actions.appendChild(deleteBtn);
+
+                item.appendChild(info);
+                item.appendChild(actions);
+
+                cachedFilesList.appendChild(item);
+            });
+        }
+
+        // Setup tooltip for feature hovering
+        function setupTooltip(map) {
+            // Helper function to calculate smart offset based on cursor position
+            function getSmartOffset(point) {
+                const canvas = map.getCanvas();
+                const width = canvas.width;
+                const height = canvas.height;
+
+                // Calculate position as percentage of canvas dimensions
+                const xPercent = point.x / width;
+                const yPercent = point.y / height;
+
+                // Base offset distance
+                const offsetDist = 15;
+
+                // Determine anchor and offset based on quadrant
+                let anchor;
+                let offset;
+
+                // Left or right side
+                if (xPercent < 0.5) {
+                    // Left side - popup goes to the right
+                    if (yPercent < 0.5) {
+                        // Top-left quadrant
+                        anchor = 'top-left';
+                        offset = [offsetDist, offsetDist];
+                    } else {
+                        // Bottom-left quadrant
+                        anchor = 'bottom-left';
+                        offset = [offsetDist, -offsetDist];
+                    }
+                } else {
+                    // Right side - popup goes to the left
+                    if (yPercent < 0.5) {
+                        // Top-right quadrant
+                        anchor = 'top-right';
+                        offset = [-offsetDist, offsetDist];
+                    } else {
+                        // Bottom-right quadrant
+                        anchor = 'bottom-right';
+                        offset = [-offsetDist, -offsetDist];
+                    }
+                }
+
+                return { anchor, offset };
+            }
+
+            // Mouse move event
+            map.on('mousemove', (e) => {
+                if (!tooltipEnabled) {
+                    // Clear any hover state
+                    if (hoveredFeatureId !== null) {
+                        map.setFeatureState(
+                            { source: 'pmtiles-source', sourceLayer: hoveredSourceLayer, id: hoveredFeatureId },
+                            { hover: false }
+                        );
+                        hoveredFeatureId = null;
+                        hoveredSourceLayer = null;
+                    }
+                    if (currentPopup) {
+                        currentPopup.remove();
+                        currentPopup = null;
+                    }
+                    return;
+                }
+
+                const features = map.queryRenderedFeatures(e.point);
+                if (features.length > 0) {
+                    const feature = features[0];
+                    const props = feature.properties;
+
+                    // Update hover state
+                    if (feature.id !== undefined) {
+                        if (hoveredFeatureId !== null && (hoveredFeatureId !== feature.id || hoveredSourceLayer !== feature.sourceLayer)) {
+                            // Clear previous hover
+                            map.setFeatureState(
+                                { source: 'pmtiles-source', sourceLayer: hoveredSourceLayer, id: hoveredFeatureId },
+                                { hover: false }
+                            );
+                        }
+                        // Set new hover
+                        hoveredFeatureId = feature.id;
+                        hoveredSourceLayer = feature.sourceLayer;
+                        map.setFeatureState(
+                            { source: 'pmtiles-source', sourceLayer: hoveredSourceLayer, id: hoveredFeatureId },
+                            { hover: true }
+                        );
+                    }
+
+                    // Build tooltip content as HTML table
+                    const entries = Object.entries(props)
+                        .filter(([k, v]) => v !== null && v !== undefined && v !== '');
+
+                    if (entries.length > 0) {
+                        const tableRows = entries
+                            .map(([k, v]) => `<tr><td style="padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #aaa; font-weight: 500; white-space: nowrap; padding-right: 12px;">${k}</td><td style="padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; word-break: break-word;">${v}</td></tr>`)
+                            .join('');
+
+                        // Remove border from last row
+                        const tableContent = `<table style="border-collapse: collapse; width: 100%;">${tableRows}</table>`.replace(/(<tr>(?:(?!<tr>).)*<\/tr>)(?![\s\S]*<tr>)/, (match) => match.replace(/border-bottom: 1px solid rgba\(255,255,255,0\.1\);/g, ''));
+
+                        // Calculate smart positioning
+                        const { anchor, offset } = getSmartOffset(e.point);
+
+                        // Update or create popup
+                        if (currentPopup) {
+                            currentPopup.setLngLat(e.lngLat).setHTML(tableContent);
+                            // Update offset by recreating popup (Maplibre doesn't support updating offset)
+                            currentPopup.remove();
+                            currentPopup = new maplibregl.Popup({
+                                closeButton: false,
+                                closeOnClick: false,
+                                maxWidth: '400px',
+                                className: 'feature-popup',
+                                anchor: anchor,
+                                offset: offset
+                            })
+                                .setLngLat(e.lngLat)
+                                .setHTML(tableContent)
+                                .addTo(map);
+                        } else {
+                            currentPopup = new maplibregl.Popup({
+                                closeButton: false,
+                                closeOnClick: false,
+                                maxWidth: '400px',
+                                className: 'feature-popup',
+                                anchor: anchor,
+                                offset: offset
+                            })
+                                .setLngLat(e.lngLat)
+                                .setHTML(tableContent)
+                                .addTo(map);
+                        }
+                    } else if (currentPopup) {
+                        currentPopup.remove();
+                        currentPopup = null;
+                    }
+                } else {
+                    // Clear hover state when no features
+                    if (hoveredFeatureId !== null) {
+                        map.setFeatureState(
+                            { source: 'pmtiles-source', sourceLayer: hoveredSourceLayer, id: hoveredFeatureId },
+                            { hover: false }
+                        );
+                        hoveredFeatureId = null;
+                        hoveredSourceLayer = null;
+                    }
+                    if (currentPopup) {
+                        currentPopup.remove();
+                        currentPopup = null;
+                    }
+                }
+            });
+
+            // Mouse leave event
+            map.on('mouseleave', () => {
+                // Clear hover state
+                if (hoveredFeatureId !== null) {
+                    map.setFeatureState(
+                        { source: 'pmtiles-source', sourceLayer: hoveredSourceLayer, id: hoveredFeatureId },
+                        { hover: false }
+                    );
+                    hoveredFeatureId = null;
+                    hoveredSourceLayer = null;
+                }
+                if (currentPopup) {
+                    currentPopup.remove();
+                    currentPopup = null;
+                }
+            });
+
+            // Click event for touch devices
+            map.on('click', (e) => {
+                if (!tooltipEnabled) return;
+
+                const features = map.queryRenderedFeatures(e.point);
+                if (features.length > 0) {
+                    const feature = features[0];
+                    const props = feature.properties;
+
+                    const entries = Object.entries(props)
+                        .filter(([k, v]) => v !== null && v !== undefined && v !== '');
+
+                    if (entries.length > 0) {
+                        const tableRows = entries
+                            .map(([k, v]) => `<tr><td style="padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #aaa; font-weight: 500; white-space: nowrap; padding-right: 12px;">${k}</td><td style="padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; word-break: break-word;">${v}</td></tr>`)
+                            .join('');
+
+                        const tableContent = `<table style="border-collapse: collapse; width: 100%;">${tableRows}</table>`.replace(/(<tr>(?:(?!<tr>).)*<\/tr>)(?![\s\S]*<tr>)/, (match) => match.replace(/border-bottom: 1px solid rgba\(255,255,255,0\.1\);/g, ''));
+
+                        // Calculate smart positioning
+                        const { anchor, offset } = getSmartOffset(e.point);
+
+                        if (currentPopup) {
+                            currentPopup.remove();
+                        }
+                        currentPopup = new maplibregl.Popup({
+                            closeButton: true,
+                            closeOnClick: true,
+                            maxWidth: '400px',
+                            className: 'feature-popup',
+                            anchor: anchor,
+                            offset: offset
+                        })
+                            .setLngLat(e.lngLat)
+                            .setHTML(tableContent)
+                            .addTo(map);
+                    }
+                }
+            });
+        }
+
+        // Load a cached file
+        async function loadCachedFile(filename) {
+            try {
+                uploadOverlay.classList.add('hidden');
+                setStatus('Loading...', 'loading');
+
+                if (currentMap) {
+                    logger.info('Removing existing map');
+                    currentMap.remove();
+                    currentMap = null;
+                }
+
+                logger.info(`Loading from cache: ${filename}`, true);
+                const db = await IndexedDBSource.openDb(DB_NAME, TABLE_NAME);
+                const offlineSource = new IndexedDBSource(db, filename, TABLE_NAME);
+
+                // Initialize PMTiles protocol
+                const protocol = new pmtiles.Protocol();
+                maplibregl.addProtocol("pmtiles", protocol.tile);
+
+                const p = new pmtiles.PMTiles(offlineSource);
+                protocol.add(p);
+
+                // Get metadata
+                const metadata = await p.getMetadata();
+                logger.info(`Metadata: ${JSON.stringify(metadata, null, 2)}`);
+
+                // Get header for geographic bounds and center
+                const header = await p.getHeader();
+                logger.info(`Header bounds: [${header.minLon}, ${header.minLat}, ${header.maxLon}, ${header.maxLat}]`);
+                logger.info(`Header center: [${header.centerLon}, ${header.centerLat}] @ zoom ${header.centerZoom}`);
+
+                // Create style
+                const style = createGenericStyle(filename, metadata);
+
+                // Determine initial view from header
+                const center = header.centerLon !== undefined && header.centerLat !== undefined
+                    ? [header.centerLon, header.centerLat]
+                    : DEFAULT_CENTER;
+                const zoom = header.centerZoom !== undefined ? header.centerZoom : DEFAULT_ZOOM;
+
+                // Create map
+                logger.info('Creating map');
+                currentMap = new maplibregl.Map({
+                    container: 'map',
+                    style: style,
+                    center: center,
+                    zoom: zoom
+                });
+
+                currentMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+                currentMap.on('load', () => {
+                    logger.info('Map loaded successfully', true);
+                    setStatus('Loaded (Offline)', 'cached');
+
+                    // Setup tooltip
+                    setupTooltip(currentMap);
+
+                    // Fit to bounds from header
+                    if (header.minLon !== undefined && header.maxLon !== undefined &&
+                        header.minLat !== undefined && header.maxLat !== undefined) {
+                        logger.info(`Fitting to bounds: [${header.minLon}, ${header.minLat}, ${header.maxLon}, ${header.maxLat}]`, true);
+                        currentMap.fitBounds([
+                            [header.minLon, header.minLat], // Southwest
+                            [header.maxLon, header.maxLat]  // Northeast
+                        ], {
+                            padding: 20,
+                            duration: 1000
+                        });
+                    }
+                });
+
+                currentMap.on('error', (e) => {
+                    logger.error(`Map error: ${e.error.message}`);
+                });
+
+                // Get blob for size display
+                const blob = await offlineSource.getAndSliceBlob(0, 1000000000);
+                const fileSize = blob ? (blob.size / 1024 / 1024).toFixed(1) : '?';
+                fileInfo.textContent = `${filename} (${fileSize} MB)`;
+                fileInfo.classList.remove('hidden');
+                fileInfo.classList.add('inline-block');
+
+            } catch (error) {
+                logger.error(`Error loading cached file: ${error.message}`);
+                setStatus('Error', 'error');
+                uploadOverlay.classList.remove('hidden');
+            }
+        }
+
+        // Delete a cached file
+        async function deleteCachedFile(filename) {
+            try {
+                logger.warn(`Deleting cached file: ${filename}`, true);
+                const db = await IndexedDBSource.openDb(DB_NAME, TABLE_NAME);
+                const tx = db.transaction([TABLE_NAME], 'readwrite');
+                const store = tx.objectStore(TABLE_NAME);
+
+                await new Promise((resolve, reject) => {
+                    const request = store.delete(filename);
+                    request.onsuccess = () => resolve();
+                    request.onerror = () => reject(request.error);
+                });
+
+                db.close();
+                logger.info(`Deleted: ${filename}`, true);
+
+                // Refresh the cached files list
+                await displayCachedFiles();
+
+                // If the deleted file was currently loaded, reset
+                if (fileInfo.textContent.includes(filename)) {
+                    if (currentMap) {
+                        currentMap.remove();
+                        currentMap = null;
+                    }
+                    fileInfo.classList.remove('inline-block');
+                    fileInfo.classList.add('hidden');
+                    setStatus('Ready', 'default');
+                    uploadOverlay.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                logger.error(`Error deleting file: ${error.message}`);
+            }
+        }
+
+        // Create generic style from PMTiles metadata
+        function createGenericStyle(filename, metadata) {
+            const layers = [];
+
+            // Background layer
+            layers.push({
+                id: 'background',
+                type: 'background',
+                paint: { 'background-color': '#f8f8f8' }
+            });
+
+            // Get vector layers if available
+            if (metadata.vector_layers) {
+                const colors = ['#80b1d3', '#fb8072', '#fdb462', '#b3de69', '#fccde5', '#d9d9d9', '#bc80bd', '#ccebc5'];
+
+                metadata.vector_layers.forEach((layer, idx) => {
+                    const layerName = layer.id || layer.name;
+                    const color = colors[idx % colors.length];
+
+                    // Add fill layer for polygons only
+                    layers.push({
+                        id: `${layerName}-fill`,
+                        source: 'pmtiles-source',
+                        'source-layer': layerName,
+                        type: 'fill',
+                        filter: ['==', ['geometry-type'], 'Polygon'],
+                        paint: {
+                            'fill-color': color,
+                            'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.8, 0.6]
+                        }
+                    });
+
+                    // Add line layer for linestrings only
+                    layers.push({
+                        id: `${layerName}-line`,
+                        source: 'pmtiles-source',
+                        'source-layer': layerName,
+                        type: 'line',
+                        filter: ['in', ['geometry-type'], ['literal', ['LineString', 'MultiLineString']]],
+                        paint: {
+                            'line-color': color,
+                            'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 3, 1.5]
+                        }
+                    });
+
+                    // Add circle layer for points
+                    layers.push({
+                        id: `${layerName}-circle`,
+                        source: 'pmtiles-source',
+                        'source-layer': layerName,
+                        type: 'circle',
+                        filter: ['==', ['geometry-type'], 'Point'],
+                        paint: {
+                            'circle-color': color,
+                            'circle-radius': ['case', ['boolean', ['feature-state', 'hover'], false], 6, 4],
+                            'circle-stroke-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2, 1],
+                            'circle-stroke-color': '#fff'
+                        }
+                    });
+
+                    logger.info(`Added layer: ${layerName}`);
+                });
+            } else {
+                // Fallback: generic layers
+                logger.warn('No vector_layers metadata found, using generic layers');
+                layers.push({
+                    id: 'generic-fill',
+                    source: 'pmtiles-source',
+                    'source-layer': 'default',
+                    type: 'fill',
+                    filter: ['==', ['geometry-type'], 'Polygon'],
+                    paint: {
+                        'fill-color': '#80b1d3',
+                        'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.8, 0.6]
+                    }
+                });
+                layers.push({
+                    id: 'generic-line',
+                    source: 'pmtiles-source',
+                    'source-layer': 'default',
+                    type: 'line',
+                    filter: ['in', ['geometry-type'], ['literal', ['LineString', 'MultiLineString']]],
+                    paint: {
+                        'line-color': '#fc8d62',
+                        'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 3, 1.5]
+                    }
+                });
+                layers.push({
+                    id: 'generic-circle',
+                    source: 'pmtiles-source',
+                    'source-layer': 'default',
+                    type: 'circle',
+                    filter: ['==', ['geometry-type'], 'Point'],
+                    paint: {
+                        'circle-color': '#b3de69',
+                        'circle-radius': ['case', ['boolean', ['feature-state', 'hover'], false], 6, 4],
+                        'circle-stroke-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2, 1],
+                        'circle-stroke-color': '#fff'
+                    }
+                });
+            }
+
+            return {
+                version: 8,
+                sources: {
+                    'pmtiles-source': {
+                        type: 'vector',
+                        url: `pmtiles://${filename}`,
+                        attribution: metadata.attribution || '© OpenStreetMap contributors'
+                    }
+                },
+                layers: layers
+            };
+        }
+
+        // Load PMTiles
+        async function loadPMTiles(source, filename, isUpload = false) {
+            let storedNewFile = false;
+            try {
+                uploadOverlay.classList.add('hidden');
+                setStatus('Loading...', 'loading');
+
+                if (currentMap) {
+                    logger.info('Removing existing map');
+                    currentMap.remove();
+                    currentMap = null;
+                }
+
+                logger.info(`Opening IndexedDB: ${DB_NAME}/${TABLE_NAME}`, true);
+                const db = await IndexedDBSource.openDb(DB_NAME, TABLE_NAME);
+                logger.info('IndexedDB opened successfully');
+
+                const offlineSource = new IndexedDBSource(db, filename, TABLE_NAME);
+                const sourceExists = await offlineSource.exists();
+
+                let blob;
+                if (!sourceExists) {
+                    storedNewFile = true;
+                    if (isUpload) {
+                        logger.info(`Storing uploaded file: ${filename}`, true);
+                        const storeStart = performance.now();
+                        await offlineSource.setSource({ filename, blob: source });
+                        logger.info(`Stored in ${(performance.now() - storeStart).toFixed(2)}ms`, true);
+                        blob = source;
+                    } else {
+                        logger.warn(`Downloading: ${source}`, true);
+                        const downloadStart = performance.now();
+                        const response = await fetch(source);
+                        const buffer = await response.arrayBuffer();
+                        const downloadTime = (performance.now() - downloadStart).toFixed(2);
+                        const sizeMB = (buffer.byteLength / 1024 / 1024).toFixed(2);
+                        logger.info(`Downloaded ${sizeMB} MB in ${downloadTime}ms`, true);
+
+                        blob = new Blob([buffer], { type: "application/octet-stream" });
+
+                        logger.info(`Storing in IndexedDB...`);
+                        const storeStart = performance.now();
+                        await offlineSource.setSource({ filename, blob });
+                        logger.info(`Stored in ${(performance.now() - storeStart).toFixed(2)}ms`, true);
+                    }
+                } else {
+                    logger.info('Using cached PMTiles', true);
+                    // Get blob for size display
+                    blob = await offlineSource.getAndSliceBlob(0, 1000000000);
+                }
+
+                // Initialize PMTiles protocol
+                logger.info('Initializing PMTiles protocol');
+                const protocol = new pmtiles.Protocol();
+                maplibregl.addProtocol("pmtiles", protocol.tile);
+
+                const p = new pmtiles.PMTiles(offlineSource);
+                protocol.add(p);
+
+                // Get metadata
+                const metadata = await p.getMetadata();
+                logger.info(`Metadata: ${JSON.stringify(metadata, null, 2)}`);
+
+                // Get header for geographic bounds and center
+                const header = await p.getHeader();
+                logger.info(`Header bounds: [${header.minLon}, ${header.minLat}, ${header.maxLon}, ${header.maxLat}]`);
+                logger.info(`Header center: [${header.centerLon}, ${header.centerLat}] @ zoom ${header.centerZoom}`);
+
+                // Create style
+                const style = createGenericStyle(filename, metadata);
+
+                // Determine initial view from header
+                const center = header.centerLon !== undefined && header.centerLat !== undefined
+                    ? [header.centerLon, header.centerLat]
+                    : DEFAULT_CENTER;
+                const zoom = header.centerZoom !== undefined ? header.centerZoom : DEFAULT_ZOOM;
+
+                // Create map
+                logger.info('Creating map');
+                currentMap = new maplibregl.Map({
+                    container: 'map',
+                    style: style,
+                    center: center,
+                    zoom: zoom
+                });
+
+                currentMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+                currentMap.on('load', () => {
+                    logger.info('Map loaded successfully', true);
+                    setStatus('Loaded (Offline)', 'cached');
+
+                    // Setup tooltip
+                    setupTooltip(currentMap);
+
+                    // Fit to bounds from header
+                    if (header.minLon !== undefined && header.maxLon !== undefined &&
+                        header.minLat !== undefined && header.maxLat !== undefined) {
+                        logger.info(`Fitting to bounds: [${header.minLon}, ${header.minLat}, ${header.maxLon}, ${header.maxLat}]`, true);
+                        currentMap.fitBounds([
+                            [header.minLon, header.minLat], // Southwest
+                            [header.maxLon, header.maxLat]  // Northeast
+                        ], {
+                            padding: 20,
+                            duration: 1000
+                        });
+                    }
+                });
+
+                currentMap.on('error', (e) => {
+                    logger.error(`Map error: ${e.error.message}`);
+                });
+
+                // Update file info badge
+                const fileSize = blob ? (blob.size / 1024 / 1024).toFixed(1) : '?';
+                fileInfo.textContent = `${filename} (${fileSize} MB)`;
+                fileInfo.classList.remove('hidden');
+                fileInfo.classList.add('inline-block');
+
+                // Refresh cached files list if we stored a new file
+                if (storedNewFile) {
+                    await displayCachedFiles();
+                }
+
+            } catch (error) {
+                logger.error(`Error loading PMTiles: ${error.message}`);
+                setStatus('Error', 'error');
+                uploadOverlay.classList.remove('hidden');
+            }
+        }
+
+        // Event Listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-gray-400', 'bg-white');
+            dropZone.classList.add('border-blue-600', 'bg-blue-50', 'border-solid');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-blue-600', 'bg-blue-50', 'border-solid');
+            dropZone.classList.add('border-gray-400', 'bg-white');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-600', 'bg-blue-50', 'border-solid');
+            dropZone.classList.add('border-gray-400', 'bg-white');
+
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.pmtiles')) {
+                logger.info(`File dropped: ${file.name}`, true);
+                loadPMTiles(file, file.name, true);
+            } else {
+                logger.error('Please drop a .pmtiles file');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                logger.info(`File selected: ${file.name}`, true);
+                loadPMTiles(file, file.name, true);
+            }
+        });
+
+        loadDefaultBtn.addEventListener('click', () => {
+            logger.info('Loading default dataset', true);
+            loadPMTiles(DEFAULT_URL, DEFAULT_FILENAME, false);
+        });
+
+        btnUpload.addEventListener('click', () => {
+            uploadOverlay.classList.toggle('hidden');
+            if (!uploadOverlay.classList.contains('hidden')) {
+                displayCachedFiles();
+            }
+        });
+
+        btnClear.addEventListener('click', async () => {
+            try {
+                logger.warn('Clearing cache...', true);
+                const db = await IndexedDBSource.openDb(DB_NAME, TABLE_NAME);
+                const tx = db.transaction([TABLE_NAME], 'readwrite');
+                const store = tx.objectStore(TABLE_NAME);
+                await new Promise((resolve, reject) => {
+                    const req = store.clear();
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+                db.close();
+                logger.info('Cache cleared', true);
+
+                if (currentMap) {
+                    currentMap.remove();
+                    currentMap = null;
+                }
+                fileInfo.classList.remove('inline-block');
+                fileInfo.classList.add('hidden');
+                setStatus('Ready', 'default');
+                uploadOverlay.classList.remove('hidden');
+
+                // Refresh cached files list
+                await displayCachedFiles();
+            } catch (error) {
+                logger.error(`Error clearing cache: ${error.message}`);
+            }
+        });
+
+        btnTooltip.addEventListener('click', () => {
+            tooltipEnabled = !tooltipEnabled;
+            if (tooltipEnabled) {
+                btnTooltip.classList.add('bg-blue-50', 'border-blue-600');
+                logger.info('Tooltip enabled', true);
+            } else {
+                btnTooltip.classList.remove('bg-blue-50', 'border-blue-600');
+                // Clear hover state when disabling tooltips
+                if (currentMap && hoveredFeatureId !== null) {
+                    currentMap.setFeatureState(
+                        { source: 'pmtiles-source', sourceLayer: hoveredSourceLayer, id: hoveredFeatureId },
+                        { hover: false }
+                    );
+                    hoveredFeatureId = null;
+                    hoveredSourceLayer = null;
+                }
+                if (currentPopup) {
+                    currentPopup.remove();
+                    currentPopup = null;
+                }
+                logger.info('Tooltip disabled', true);
+            }
+        });
+
+        logClearBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            logger.clear();
+        });
+
+        // Console toggle
+        function toggleConsole() {
+            consoleOpened = !consoleOpened;
+            if (consoleOpened) {
+                // Open to 50% height
+                logPanel.style.height = '50%';
+                mapView.style.bottom = '50%';
+                uploadOverlay.style.bottom = '50%';
+                consoleToggleIcon.textContent = '▼';
+            } else {
+                // Minimize to just the header bar (40px)
+                logPanel.style.height = '40px';
+                mapView.style.bottom = '40px';
+                uploadOverlay.style.bottom = '40px';
+                consoleToggleIcon.textContent = '▲';
+            }
+        }
+
+        logHeader.addEventListener('click', toggleConsole);
+
+        // Initialize
+        logger.info('PMTiles Offline Demo initialized', true);
+        logger.info('Drag and drop a .pmtiles file or load the default dataset');
+
+        // Check for cached files on startup
+        displayCachedFiles();
+    </script>
 
     <script>
-        // Register service worker for offline support
+        // Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker registered:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.log('Service Worker registration failed:', error);
-                    });
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
             });
         }
     </script>
