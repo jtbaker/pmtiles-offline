@@ -301,6 +301,10 @@
 
         // Setup tooltip for feature hovering
         function setupTooltip(map) {
+            // Track current mouse position
+            let currentMousePoint = null;
+            let currentMouseLngLat = null;
+
             // Helper function to calculate smart offset based on cursor position
             function getSmartOffset(point) {
                 const canvas = map.getCanvas();
@@ -346,26 +350,11 @@
                 return { anchor, offset };
             }
 
-            // Mouse move event
-            map.on('mousemove', (e) => {
-                if (!tooltipEnabled) {
-                    // Clear any hover state
-                    if (hoveredFeatureId !== null) {
-                        map.setFeatureState(
-                            { source: 'pmtiles-source', sourceLayer: hoveredSourceLayer, id: hoveredFeatureId },
-                            { hover: false }
-                        );
-                        hoveredFeatureId = null;
-                        hoveredSourceLayer = null;
-                    }
-                    if (currentPopup) {
-                        currentPopup.remove();
-                        currentPopup = null;
-                    }
-                    return;
-                }
+            // Helper function to update tooltip at current mouse position
+            function updateTooltipAtCurrentPosition() {
+                if (!tooltipEnabled || !currentMousePoint || !currentMouseLngLat) return;
 
-                const features = map.queryRenderedFeatures(e.point);
+                const features = map.queryRenderedFeatures(currentMousePoint);
                 if (features.length > 0) {
                     const feature = features[0];
                     const props = feature.properties;
@@ -388,24 +377,27 @@
                         );
                     }
 
-                    // Build tooltip content as HTML table
+                    // Build tooltip content
                     const entries = Object.entries(props)
                         .filter(([k, v]) => v !== null && v !== undefined && v !== '');
 
                     if (entries.length > 0) {
+                        // Layer header row with stronger border
+                        const layerRow = `<tr><td style="padding: 4px 8px; border-bottom: 2px solid rgba(255,255,255,0.3); color: #aaa; font-weight: 500; white-space: nowrap; padding-right: 12px;">layer</td><td style="padding: 4px 8px; border-bottom: 2px solid rgba(255,255,255,0.3); color: #fff; word-break: break-word;">${feature.sourceLayer}</td></tr>`;
+
                         const tableRows = entries
                             .map(([k, v]) => `<tr><td style="padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #aaa; font-weight: 500; white-space: nowrap; padding-right: 12px;">${k}</td><td style="padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; word-break: break-word;">${v}</td></tr>`)
                             .join('');
 
                         // Remove border from last row
-                        const tableContent = `<table style="border-collapse: collapse; width: 100%;">${tableRows}</table>`.replace(/(<tr>(?:(?!<tr>).)*<\/tr>)(?![\s\S]*<tr>)/, (match) => match.replace(/border-bottom: 1px solid rgba\(255,255,255,0\.1\);/g, ''));
+                        const tableContent = `<table style="border-collapse: collapse; width: 100%;">${layerRow}${tableRows}</table>`.replace(/(<tr>(?:(?!<tr>).)*<\/tr>)(?![\s\S]*<tr>)/, (match) => match.replace(/border-bottom: 1px solid rgba\(255,255,255,0\.1\);/g, ''));
 
                         // Calculate smart positioning
-                        const { anchor, offset } = getSmartOffset(e.point);
+                        const { anchor, offset } = getSmartOffset(currentMousePoint);
 
                         // Update or create popup
                         if (currentPopup) {
-                            currentPopup.setLngLat(e.lngLat).setHTML(tableContent);
+                            currentPopup.setLngLat(currentMouseLngLat).setHTML(tableContent);
                             // Update offset by recreating popup (Maplibre doesn't support updating offset)
                             currentPopup.remove();
                             currentPopup = new maplibregl.Popup({
@@ -416,7 +408,7 @@
                                 anchor: anchor,
                                 offset: offset
                             })
-                                .setLngLat(e.lngLat)
+                                .setLngLat(currentMouseLngLat)
                                 .setHTML(tableContent)
                                 .addTo(map);
                         } else {
@@ -428,7 +420,7 @@
                                 anchor: anchor,
                                 offset: offset
                             })
-                                .setLngLat(e.lngLat)
+                                .setLngLat(currentMouseLngLat)
                                 .setHTML(tableContent)
                                 .addTo(map);
                         }
@@ -451,10 +443,57 @@
                         currentPopup = null;
                     }
                 }
+            }
+
+            // Mouse move event
+            map.on('mousemove', (e) => {
+                // Update tracked mouse position
+                currentMousePoint = e.point;
+                currentMouseLngLat = e.lngLat;
+
+                if (!tooltipEnabled) {
+                    // Clear any hover state
+                    if (hoveredFeatureId !== null) {
+                        map.setFeatureState(
+                            { source: 'pmtiles-source', sourceLayer: hoveredSourceLayer, id: hoveredFeatureId },
+                            { hover: false }
+                        );
+                        hoveredFeatureId = null;
+                        hoveredSourceLayer = null;
+                    }
+                    if (currentPopup) {
+                        currentPopup.remove();
+                        currentPopup = null;
+                    }
+                    return;
+                }
+
+                updateTooltipAtCurrentPosition();
+            });
+
+            // Update tooltip during zoom/pan interactions
+            map.on('zoom', () => {
+                updateTooltipAtCurrentPosition();
+            });
+
+            map.on('move', () => {
+                updateTooltipAtCurrentPosition();
+            });
+
+            map.on('rotate', () => {
+                updateTooltipAtCurrentPosition();
+            });
+
+            map.on('pitch', () => {
+                updateTooltipAtCurrentPosition();
             });
 
             // Mouse leave event
             map.on('mouseleave', () => {
+                // Clear tracked position
+                currentMousePoint = null;
+                currentMouseLngLat = null;
+
                 // Clear hover state
                 if (hoveredFeatureId !== null) {
                     map.setFeatureState(
@@ -483,11 +522,14 @@
                         .filter(([k, v]) => v !== null && v !== undefined && v !== '');
 
                     if (entries.length > 0) {
+                        // Layer header row with stronger border
+                        const layerRow = `<tr><td style="padding: 4px 8px; border-bottom: 2px solid rgba(255,255,255,0.3); color: #aaa; font-weight: 500; white-space: nowrap; padding-right: 12px;">layer</td><td style="padding: 4px 8px; border-bottom: 2px solid rgba(255,255,255,0.3); color: #fff; word-break: break-word;">${feature.sourceLayer}</td></tr>`;
+
                         const tableRows = entries
                             .map(([k, v]) => `<tr><td style="padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #aaa; font-weight: 500; white-space: nowrap; padding-right: 12px;">${k}</td><td style="padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; word-break: break-word;">${v}</td></tr>`)
                             .join('');
 
-                        const tableContent = `<table style="border-collapse: collapse; width: 100%;">${tableRows}</table>`.replace(/(<tr>(?:(?!<tr>).)*<\/tr>)(?![\s\S]*<tr>)/, (match) => match.replace(/border-bottom: 1px solid rgba\(255,255,255,0\.1\);/g, ''));
+                        const tableContent = `<table style="border-collapse: collapse; width: 100%;">${layerRow}${tableRows}</table>`.replace(/(<tr>(?:(?!<tr>).)*<\/tr>)(?![\s\S]*<tr>)/, (match) => match.replace(/border-bottom: 1px solid rgba\(255,255,255,0\.1\);/g, ''));
 
                         // Calculate smart positioning
                         const { anchor, offset } = getSmartOffset(e.point);
@@ -655,53 +697,83 @@
             if (metadata.vector_layers) {
                 const colors = ['#80b1d3', '#fb8072', '#fdb462', '#b3de69', '#fccde5', '#d9d9d9', '#bc80bd', '#ccebc5'];
 
-                metadata.vector_layers.forEach((layer, idx) => {
+                // Sort layers by minzoom for proper ordering
+                const sortedLayers = [...metadata.vector_layers].sort((a, b) => (a.minzoom || 0) - (b.minzoom || 0));
+
+                // Collect layers by type
+                const fillLayers = [];
+                const lineLayers = [];
+                const circleLayers = [];
+
+                sortedLayers.forEach((layer, idx) => {
                     const layerName = layer.id || layer.name;
-                    const color = colors[idx % colors.length];
+                    // Use reserved blue color for water layer
+                    const color = layerName === 'water' ? '#4A90E2' : colors[idx % colors.length];
+                    const minzoom = layer.minzoom || 0;
 
-                    // Add fill layer for polygons only
-                    layers.push({
-                        id: `${layerName}-fill`,
-                        source: 'pmtiles-source',
-                        'source-layer': layerName,
-                        type: 'fill',
-                        filter: ['==', ['geometry-type'], 'Polygon'],
-                        paint: {
-                            'fill-color': color,
-                            'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.8, 0.6]
-                        }
+                    // Fill layer for polygons
+                    fillLayers.push({
+                        layer: {
+                            id: `${layerName}-fill`,
+                            source: 'pmtiles-source',
+                            'source-layer': layerName,
+                            type: 'fill',
+                            filter: ['==', ['geometry-type'], 'Polygon'],
+                            paint: {
+                                'fill-color': color,
+                                'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.8, 0.6]
+                            }
+                        },
+                        minzoom: minzoom
                     });
 
-                    // Add line layer for linestrings only
-                    layers.push({
-                        id: `${layerName}-line`,
-                        source: 'pmtiles-source',
-                        'source-layer': layerName,
-                        type: 'line',
-                        filter: ['in', ['geometry-type'], ['literal', ['LineString', 'MultiLineString']]],
-                        paint: {
-                            'line-color': color,
-                            'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 3, 1.5]
-                        }
+                    // Line layer for linestrings
+                    lineLayers.push({
+                        layer: {
+                            id: `${layerName}-line`,
+                            source: 'pmtiles-source',
+                            'source-layer': layerName,
+                            type: 'line',
+                            filter: ['in', ['geometry-type'], ['literal', ['LineString', 'MultiLineString']]],
+                            paint: {
+                                'line-color': color,
+                                'line-width': ['case', ['boolean', ['feature-state', 'hover'], false], 3, 1.5]
+                            }
+                        },
+                        minzoom: minzoom
                     });
 
-                    // Add circle layer for points
-                    layers.push({
-                        id: `${layerName}-circle`,
-                        source: 'pmtiles-source',
-                        'source-layer': layerName,
-                        type: 'circle',
-                        filter: ['==', ['geometry-type'], 'Point'],
-                        paint: {
-                            'circle-color': color,
-                            'circle-radius': ['case', ['boolean', ['feature-state', 'hover'], false], 6, 4],
-                            'circle-stroke-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2, 1],
-                            'circle-stroke-color': '#fff'
-                        }
+                    // Circle layer for points
+                    circleLayers.push({
+                        layer: {
+                            id: `${layerName}-circle`,
+                            source: 'pmtiles-source',
+                            'source-layer': layerName,
+                            type: 'circle',
+                            filter: ['==', ['geometry-type'], 'Point'],
+                            paint: {
+                                'circle-color': color,
+                                'circle-radius': ['case', ['boolean', ['feature-state', 'hover'], false], 6, 4],
+                                'circle-stroke-width': ['case', ['boolean', ['feature-state', 'hover'], false], 2, 1],
+                                'circle-stroke-color': '#fff'
+                            }
+                        },
+                        minzoom: minzoom
                     });
 
                     logger.info(`Added layer: ${layerName}`);
                 });
+
+                // Sort fills by minzoom and add them first
+                fillLayers.sort((a, b) => a.minzoom - b.minzoom);
+                fillLayers.forEach(item => layers.push(item.layer));
+
+                // Add all lines on top of fills
+                lineLayers.forEach(item => layers.push(item.layer));
+
+                // Add all circles/points on top of everything
+                circleLayers.forEach(item => layers.push(item.layer));
+
             } else {
                 // Fallback: generic layers
                 logger.warn('No vector_layers metadata found, using generic layers');
