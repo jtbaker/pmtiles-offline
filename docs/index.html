@@ -562,6 +562,7 @@
                 });
 
                 currentMap.addControl(new maplibregl.NavigationControl(), 'top-right');
+                currentMap.addControl(new maplibregl.GeolocateControl(), 'top-right')
 
                 currentMap.on('load', () => {
                     logger.info('Map loaded successfully', true);
